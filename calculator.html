@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AIDC 价值链财务模型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EEF1F4; --surface:#FFFFFF; --sunk:#F6F8FA; --ink:#111C26; --muted:#5B6875; --faint:#8793A0;
+  --rule:#CFD7DF; --rule2:#E4E9EE;
+  --rev:#1B62C4; --cost:#D9801A; --profit:#0A7862; --loss:#D23B2A;
+  --c-xfer:#B9C3CD; --c-dep:#3F6FAE; --c-power:#E0912B; --c-staff:#8A5FB0; --c-other:#7C8997;
+  --profit-bg:rgba(10,120,98,.10); --loss-bg:rgba(210,59,42,.10);
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC","Segoe UI",sans-serif;
+  --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  --num:"Barlow Semi Condensed","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0D1319; --surface:#151D26; --sunk:#111922; --ink:#E7EDF2; --muted:#9AA7B4; --faint:#6F7C89;
+    --rule:#2B3743; --rule2:#202A35;
+    --rev:#63A0F2; --cost:#F0A64A; --profit:#3FC4A6; --loss:#FF6F5B;
+    --c-xfer:#4A5663; --c-dep:#5B8BD0; --c-power:#E9A043; --c-staff:#A583CC; --c-other:#8492A0;
+    --profit-bg:rgba(63,196,166,.14); --loss-bg:rgba(255,111,91,.14);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0D1319; --surface:#151D26; --sunk:#111922; --ink:#E7EDF2; --muted:#9AA7B4; --faint:#6F7C89;
+  --rule:#2B3743; --rule2:#202A35;
+  --rev:#63A0F2; --cost:#F0A64A; --profit:#3FC4A6; --loss:#FF6F5B;
+  --c-xfer:#4A5663; --c-dep:#5B8BD0; --c-power:#E9A043; --c-staff:#A583CC; --c-other:#8492A0;
+  --profit-bg:rgba(63,196,166,.14); --loss-bg:rgba(255,111,91,.14);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 120px); -webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.6 var(--sans);}
+.n,td.r,th.r,input[type=number]{font-family:var(--num);font-variant-numeric:tabular-nums;letter-spacing:.01em}
+h1,h2,h3{font-family:var(--serif);margin:0;font-weight:900;line-height:1.25}
+a{color:var(--rev)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--rev);outline-offset:2px}
+
+/* ---------- 页头 ---------- */
+.top{padding:22px 24px 14px;display:grid;grid-template-columns:1fr auto;gap:14px 24px;align-items:end;border-bottom:1px solid var(--rule)}
+.top h1{font-size:clamp(22px,2.6vw,32px);letter-spacing:.01em}
+.top p{margin:6px 0 0;color:var(--muted);max-width:62em}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.tools select,.btn{height:32px;padding:0 10px;border:1px solid var(--rule);background:var(--surface);border-radius:3px;cursor:pointer}
+.btn:hover,.tools select:hover{border-color:var(--ink)}
+.scope{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.scope span{color:var(--muted);margin-right:4px}
+.scope button{height:30px;padding:0 12px;border:1px solid var(--rule);background:transparent;border-radius:15px;cursor:pointer}
+.scope button:hover{border-color:var(--ink)}
+.scope button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+/* ---------- 指标条 ---------- */
+.kpis{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:2px solid var(--ink);display:flex;overflow-x:auto}
+.kpi{flex:1 0 auto;min-width:136px;padding:9px 16px 8px;border-right:1px solid var(--rule2)}
+.kpi:last-child{border-right:0}
+.kpi dt{font-size:12px;color:var(--muted);white-space:nowrap}
+.kpi dd{margin:0;font:600 23px/1.2 var(--num);white-space:nowrap}
+.kpi small{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap}
+.kpis dl{display:contents}
+.pos{color:var(--profit)} .neg{color:var(--loss)}
+
+/* ---------- 布局 ---------- */
+.layout{display:grid;grid-template-columns:330px minmax(0,1fr);align-items:start}
+aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 64px);max-height:calc(100vh - 64px);overflow-y:auto;border-right:1px solid var(--rule);background:var(--sunk);padding:10px 0 40px}
+aside .hd{padding:6px 16px 8px;color:var(--muted);font-size:12.5px}
+main{padding:0 24px 80px;min-width:0}
+.secnav{display:flex;gap:4px 18px;flex-wrap:wrap;padding:12px 0;border-bottom:1px solid var(--rule);font-size:13px}
+.secnav a{color:var(--muted);text-decoration:none}
+.secnav a:hover{color:var(--ink);text-decoration:underline}
+section{padding:30px 0 6px;border-bottom:1px solid var(--rule)}
+section>h2{font-size:21px}
+section>.lede{color:var(--muted);margin:6px 0 16px;max-width:64em}
+h3{font-size:15.5px;margin:24px 0 8px;font-weight:700}
+.note{color:var(--muted);font-size:12.5px;max-width:70em}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px}
+
+/* ---------- 输入 ---------- */
+details.g{border-bottom:1px solid var(--rule2)}
+details.g>summary{list-style:none;cursor:pointer;padding:9px 16px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+details.g>summary::-webkit-details-marker{display:none}
+details.g>summary::after{content:"+";font:500 16px var(--num);color:var(--muted)}
+details.g[open]>summary::after{content:"−"}
+.gb{padding:2px 16px 12px}
+.f{display:grid;grid-template-columns:1fr 132px;gap:2px 8px;align-items:center;padding:3px 0}
+.f>label{font-size:13px;line-height:1.35}
+.fi{display:flex;align-items:center;border:1px solid var(--rule);background:var(--surface);border-radius:3px;height:28px}
+.fi:focus-within{border-color:var(--rev)}
+.fi input{border:0;background:transparent;width:100%;min-width:0;height:26px;padding:0 6px;text-align:right;font-size:14px;outline:0;-moz-appearance:textfield}
+.fi input::-webkit-outer-spin-button,.fi input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.fi .u{padding-right:6px;color:var(--faint);font-size:11.5px;white-space:nowrap}
+.f input[type=range]{grid-column:1/-1;width:100%;margin:2px 0 4px;accent-color:var(--rev)}
+.f .hint{grid-column:1/-1;font-size:11.5px;color:var(--faint);line-height:1.4;margin-bottom:2px}
+.f.pair{grid-template-columns:1fr 60px 84px}
+.f.chk{grid-template-columns:auto 1fr;justify-content:start;gap:8px}
+.f.chk input{width:16px;height:16px;accent-color:var(--ink)}
+.f.sel{grid-template-columns:1fr 132px}
+.f.sel select{height:28px;border:1px solid var(--rule);background:var(--surface);border-radius:3px;width:100%}
+.sub{font-size:12px;color:var(--muted);margin:10px 0 2px;padding-top:8px;border-top:1px dashed var(--rule)}
+
+/* ---------- 账表 ---------- */
+.tw{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:6px 10px;border-bottom:1px solid var(--rule2);text-align:left;vertical-align:top}
+thead th{font-weight:600;color:var(--muted);border-bottom:1px solid var(--ink);white-space:nowrap;font-size:12.5px;vertical-align:bottom}
+td.r,th.r{text-align:right;white-space:nowrap}
+tr.tot td{border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);font-weight:700}
+tr.grp td{background:var(--sunk);font-weight:600;color:var(--muted);font-size:12.5px}
+tr.off td{color:var(--faint)}
+td .d{display:block;color:var(--faint);font-size:11.5px;line-height:1.4}
+td.shr{white-space:nowrap;min-width:180px}
+td .bar{display:inline-block;height:9px;background:var(--c-dep);margin-right:8px;vertical-align:-1px}
+details.why{margin-top:3px}
+details.why summary{font-size:11.5px;color:var(--muted);cursor:pointer}
+td.r .chip{margin-top:3px}
+td input.cell{width:60px;height:26px;border:1px solid var(--rule);background:var(--surface);border-radius:3px;text-align:right;padding:0 3px;font-family:var(--num);font-size:13px;-moz-appearance:textfield}
+td input.cell::-webkit-outer-spin-button,td input.cell::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+td input.cell.w{width:74px}
+.chip{display:inline-block;padding:0 7px;border-radius:9px;font-size:11.5px;line-height:18px;white-space:nowrap;border:1px solid var(--rule);color:var(--muted)}
+.chip.ok{background:var(--profit-bg);color:var(--profit);border-color:transparent}
+.chip.bad{background:var(--loss-bg);color:var(--loss);border-color:transparent}
+.chip.own{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+/* ---------- 价值链(单线图) ---------- */
+.chain{position:relative;margin-top:6px}
+.chain::before{content:"";position:absolute;left:11px;top:14px;bottom:14px;width:3px;background:var(--ink)}
+.cn{position:relative;padding:0 0 0 38px}
+.cn::before{content:"";position:absolute;left:4px;top:17px;width:17px;height:17px;border-radius:50%;background:var(--paper);border:3px solid var(--ink)}
+.cn.ext::before{border-style:dotted;border-color:var(--muted)}
+.cn.owned::before{background:var(--ink)}
+.cn-in{background:var(--surface);border:1px solid var(--rule);padding:12px 16px;display:grid;grid-template-columns:190px minmax(0,1fr) 236px;gap:6px 20px;align-items:center}
+.cn.owned .cn-in{border-color:var(--ink);box-shadow:inset 4px 0 0 var(--ink)}
+.cn.ext .cn-in{background:transparent;border-style:dashed;grid-template-columns:190px minmax(0,1fr)}
+.cn h3{margin:0;font-size:17px}
+.cn .who{color:var(--muted);font-size:12.5px}
+.cn .verdict{font:600 26px/1.1 var(--num)}
+.cn .verdict small{font:400 12px var(--sans);color:var(--muted);margin-left:6px}
+.cn .fig{display:grid;grid-template-columns:auto auto;gap:0 12px;font-size:12.5px;justify-content:end;text-align:right}
+.cn .fig b{font:600 14px var(--num)}
+.cn .fig span{color:var(--muted);text-align:left}
+.cbar{position:relative;height:26px;display:flex;background:transparent;margin:4px 0}
+.cbar i{display:block;height:100%}
+.cbar .mk{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+.cbar .mk::after{content:"收入";position:absolute;top:-15px;left:-12px;font-size:10.5px;color:var(--muted);white-space:nowrap}
+.cbar-cap{font-size:11.5px;color:var(--muted)}
+.lk{position:relative;padding:7px 0 7px 38px;font-size:12.5px;color:var(--muted);display:flex;gap:6px 16px;flex-wrap:wrap;align-items:baseline}
+.lk b{color:var(--ink);font:600 14px var(--num)}
+.lk .side{margin-left:auto;border:1px dashed var(--rule);padding:1px 8px;border-radius:3px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin:10px 0 0}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px}
+.s-xfer{background:repeating-linear-gradient(135deg,var(--c-xfer) 0 4px,transparent 4px 7px);outline:1px solid var(--c-xfer);outline-offset:-1px}
+.s-dep{background:var(--c-dep)} .s-power{background:var(--c-power)} .s-staff{background:var(--c-staff)} .s-other{background:var(--c-other)}
+.s-profit{background:var(--profit)} .s-loss{background:repeating-linear-gradient(135deg,var(--loss) 0 4px,transparent 4px 7px);outline:1px solid var(--loss);outline-offset:-1px}
+.s-p1{background:var(--profit);opacity:.55} .s-p2{background:var(--profit);opacity:.78} .s-p3{background:var(--profit)}
+.dest{margin-top:8px}
+.dest .cbar{height:34px}
+.destlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:2px 18px;margin-top:8px;font-size:12.5px}
+.destlist div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid var(--rule2);padding:3px 0}
+.destlist i{display:inline-block;width:10px;height:10px;margin-right:6px}
+
+/* ---------- 甘特 ---------- */
+.gantt{font-size:12.5px}
+.gr{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;align-items:center;padding:4px 0;border-bottom:1px solid var(--rule2)}
+.gr .gl b{display:block;font-weight:600}
+.gr .gl span{color:var(--faint);font-size:11.5px}
+.gt{position:relative;height:22px;background:repeating-linear-gradient(90deg,var(--rule2) 0 1px,transparent 1px var(--mw))}
+.gt i{position:absolute;top:3px;bottom:3px;background:var(--c-dep);min-width:3px}
+.gt i.ramp{background:var(--c-power)} .gt i.op{background:var(--profit)} .gt i.lead{background:var(--c-staff)}
+.gt b{position:absolute;top:1px;font:600 12px var(--num);padding-left:5px;white-space:nowrap}
+.gax{position:relative;height:18px;font:500 11px var(--num);color:var(--muted)}
+.gax span{position:absolute;transform:translateX(-50%)}
+.gnote{color:var(--muted);font-size:12px;margin:0;padding:2px 0 6px 160px}
+.spend{position:relative;height:54px;display:flex;align-items:flex-end}
+.spend i{flex:1;background:var(--cost);margin-right:1px;min-height:0}
+
+/* ---------- 单位经济 / 对比条 ---------- */
+.hb{display:grid;grid-template-columns:150px minmax(0,1fr) 84px;gap:8px;align-items:center;font-size:12.5px;padding:3px 0}
+.hb.two{grid-template-columns:150px minmax(0,1fr)}
+.hb .t{height:18px;display:flex}
+.hb .t i{display:block;height:100%}
+.hb b{font:600 14px var(--num);text-align:right}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0;border:1px solid var(--rule);background:var(--surface)}
+.tile{padding:10px 14px;border-right:1px solid var(--rule2);border-bottom:1px solid var(--rule2)}
+.tile dt{font-size:12px;color:var(--muted)}
+.tile dd{margin:0;font:600 20px/1.25 var(--num)}
+.tile small{font-size:11.5px;color:var(--muted);display:block}
+.callout{border-left:4px solid var(--ink);background:var(--surface);padding:10px 14px;margin:14px 0;max-width:70em}
+.callout.warn{border-color:var(--cost)}
+
+/* ---------- 热力图 ---------- */
+.heat td,.heat th{text-align:center;padding:6px 6px;font-family:var(--num);font-size:13px;border:1px solid var(--surface)}
+.heat th{color:var(--muted);font-weight:500;background:transparent;border-bottom:1px solid var(--surface)}
+.heat td.cur{outline:2px solid var(--ink);outline-offset:-2px;font-weight:700}
+.heat caption{caption-side:top;text-align:left;font-size:12px;color:var(--muted);padding-bottom:4px}
+
+svg text{font-family:var(--num);fill:var(--muted);font-size:11px}
+.src li{margin:4px 0;max-width:72em}
+footer{padding:20px 24px 40px;color:var(--faint);font-size:12px}
+
+@media (max-width:1020px){
+  .layout{grid-template-columns:1fr}
+  aside{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--rule);display:none;padding-bottom:10px}
+  aside.open{display:block}
+  .cn-in{grid-template-columns:1fr 1fr}
+  .cn-in>.mid{grid-column:1/-1;order:3;margin-top:14px}
+  .cn .verdict small{display:block;margin:2px 0 4px}
+  .cn .verdict{text-align:right}
+  .cn-in{padding:12px}
+  .lk .side{margin-left:0}
+  .cn.ext .cn-in{grid-template-columns:1fr}
+  .cn .fig{justify-content:end}
+  main{padding:0 14px 60px}
+  .top{padding:16px 14px 12px;grid-template-columns:1fr}
+  .tools{justify-content:flex-start}
+  .gr{grid-template-columns:104px minmax(0,1fr)}
+  .gnote{padding-left:0}
+  .hb{grid-template-columns:104px minmax(0,1fr) 70px}
+}
+@media (min-width:1021px){ #toggleInputs{display:none} }
+@media print{ aside,.tools,.scope,.secnav{display:none} .kpis{position:static} .layout{grid-template-columns:1fr} }
+
+</style>
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>AIDC 价值链财务模型</h1>
+    <p>以 128 台 8 卡 B300 服务器为基准,从电力、机房、算力一路算到 Token,看清每个环节收多少、花多少、谁在赚钱。左侧所有假设都可以改。</p>
+  </div>
+  <div class="tools">
+    <button class="btn" id="toggleInputs" type="button" aria-expanded="false" aria-controls="inputs">调整假设</button>
+    <label for="cur" style="color:var(--muted)">显示币种</label>
+    <select id="cur" aria-label="显示币种"><option value="USD">美元</option><option value="CNY">人民币</option><option value="SGD">新加坡元</option></select>
+    <button class="btn" id="reset" type="button">恢复默认假设</button>
+  </div>
+  <div class="scope" id="scope"></div>
+</header>
+
+<div class="kpis" id="kpis" aria-live="polite"></div>
+
+<div class="layout">
+  <aside id="inputs" aria-label="模型假设"></aside>
+  <main>
+    <nav class="secnav" aria-label="章节">
+      <a href="#chain">价值链</a><a href="#capex">投资成本与周期</a><a href="#ops">运营收支</a><a href="#token">Token 产能与定价</a><a href="#returns">现金流与回报</a><a href="#sens">敏感性</a><a href="#bench">对标 Morgan Stanley</a><a href="#src">数据来源</a>
+    </nav>
+
+    <section id="chain">
+      <h2>钱怎么在这条链上流动</h2>
+      <p class="lede">客户的钱从上往下流:先到卖 Token 的,再到出算力的,再到机房,最后到电网。每个环节把收入切成「付给下一环节」「自己的成本」和「利润」三块。实心圆点是你投资的环节。数字为稳态年(满负荷、首年价格)。</p>
+      <div id="chainBody"></div>
+      <h3>客户每付 100 元,最后落到谁手里</h3>
+      <p class="note">把三个环节合起来看,不论由谁经营。</p>
+      <div class="dest" id="destBody"></div>
+    </section>
+
+    <section id="capex">
+      <h2>投资成本与周期</h2>
+      <p class="lede">建一座 AIDC 的钱分两大块:寿命 15 年左右的机房与电力,和寿命 5 年左右的服务器。前者决定你多久能投产,后者决定你要筹多少钱。</p>
+      <dl class="tiles" id="capexTiles"></dl>
+      <h3>投资明细</h3>
+      <div class="tw" id="capexTable"></div>
+      <h3>建设周期</h3>
+      <p class="note" id="ganttLede"></p>
+      <div id="ganttBody"></div>
+    </section>
+
+    <section id="ops">
+      <h2>运营收支</h2>
+      <p class="lede">稳态年每个环节的收入与成本。标注「链内结算」的项目是上下游之间的转移定价:上游的收入就是下游的成本,如果两个环节都是你的,合并时会抵消。</p>
+      <div class="cols" id="ledgers"></div>
+      <h3>一张 B300 开一小时</h3>
+      <div id="unitBody"></div>
+      <h3>人员配备</h3>
+      <div class="tw" id="staffBody" style="max-width:640px"></div>
+    </section>
+
+    <section id="token">
+      <h2>Token 产能与定价</h2>
+      <p class="lede">同一批服务器跑不同的开源模型,产出的 token 数量和能卖的价钱差别极大。价格取自 OpenRouter 各模型页的供应商报价,吞吐取自 SemiAnalysis InferenceX 在 B300 上的实测。表中价格、吞吐、算力占比都可以直接改。</p>
+      <dl class="tiles" id="tokTiles"></dl>
+      <h3>跑哪个模型</h3>
+      <div class="tw" id="modelTable"></div>
+      <p class="note">线上吞吐 = 基准吞吐 × 生产折减 × 输入输出换算;每卡每小时产值 = 线上吞吐 × 推理负载率 × 3600 × 成交均价。吞吐为输入加输出的合计 token,与 InferenceX 和 Morgan Stanley 的口径一致。</p>
+      <div class="callout warn" id="tokNote"></div>
+      <h3>能服务多少用户</h3>
+      <div class="tw" id="userTable" style="max-width:720px"></div>
+      <h3>怎么卖</h3>
+      <div class="tw" id="chanTable"></div>
+    </section>
+
+    <section id="returns">
+      <h2>现金流与回报</h2>
+      <p class="lede">只统计你投资范围内的环节,按月滚动后汇总到年。</p>
+      <dl class="tiles" id="retTiles"></dl>
+      <h3>年度现金流</h3>
+      <div id="cfChart"></div>
+      <p class="note" id="retNote"></p>
+      <div class="tw" id="cfTable"></div>
+    </section>
+
+    <section id="sens">
+      <h2>敏感性</h2>
+      <p class="lede">粗框是当前假设所在的位置。前两张表分别回答「租价跌到多少算力层开始亏」和「吞吐或成交价变化多少 Token 层才赚钱」。</p>
+      <div class="cols">
+        <div class="tw" id="heat1"></div>
+        <div class="tw" id="heat2"></div>
+        <div class="tw" id="heat3"></div>
+      </div>
+    </section>
+
+    <section id="bench">
+      <h2>对标 Morgan Stanley</h2>
+      <p class="lede">Morgan Stanley 在《AI Guidebook: Navigating the Age of Inference》(2026 年 9 月 7 日)里用每 GW 的 GB300 数据中心给出了三种变现方式的回报框架。下表把你的模型折算到每 GW 市电容量,放在一起比。</p>
+      <div class="tw" id="benchTable"></div>
+      <div class="cols">
+        <div><h3>钱花在哪:投资结构</h3><div id="benchMix"></div></div>
+        <div><h3>MS 估算的每 GW 投资,按芯片代际</h3><div id="benchGens"></div><p class="note">Rubin Ultra 的 $50bn 含约 $3bn 的表后自备电源。</p></div>
+      </div>
+      <p class="note">差异主要来自三处:MS 用的是超大规模厂商的采购价与美国造价,这里默认的是中小买家的 HGX B300 渠道价;MS 的 Token 单价取 $1.75/百万、吞吐取 2,750 tok/s/卡,这里按 OpenRouter 上开源模型的实际报价与 InferenceX 实测再打折;MS 的回报率不含爬坡期和价格下行。</p>
+    </section>
+
+    <section id="src">
+      <h2>数据来源与口径</h2>
+      <ul class="src">
+        <li><b>投资与回报框架</b>:Morgan Stanley《The Morgan Stanley AI Guidebook: Navigating the Age of Inference》,2026-09-07。GB300 每 GW 总投资 $39bn(IT $23bn、按 5 年折旧;非 IT $16bn、按 15 年折旧),每 GW 约 41 万颗芯片;租赁价 $7–10/GPU·时、利用率 75%;Powered Shell 约 15% 的成本收益率。</li>
+        <li><b>模型价格</b>:2026-10-06 取自 OpenRouter 模型列表接口与各模型页的供应商报价表:
+          <a href="https://openrouter.ai/deepseek/deepseek-v4.1-flash" target="_blank" rel="noopener">DeepSeek V4.1 Flash</a>、
+          <a href="https://openrouter.ai/deepseek/deepseek-v4-pro-0813" target="_blank" rel="noopener">DeepSeek V4 Pro 0813</a>、
+          <a href="https://openrouter.ai/z-ai/glm-5.3" target="_blank" rel="noopener">GLM 5.3</a>。表中默认值取多数供应商采用的标价,而不是页面顶部显示的最低路由价(后者常是个别供应商「输入极低、输出极高」的非典型报价)。</li>
+        <li><b>吞吐</b>:<a href="https://inferencex.semianalysis.com/" target="_blank" rel="noopener">SemiAnalysis InferenceX</a> 在 B300 上的公开实测,8K 输入 / 1K 输出、FP4。基准值是饱和压测下的结果,所以另设「生产折减」与「推理负载率」两个系数。标注「吞吐为估算」的模型没有公开实测,请用自测数据替换。</li>
+        <li><b>B300 硬件与租价</b>:2026 年 9–10 月的公开渠道报价。8 卡 HGX B300 整机约 $43–65 万,整机功耗 12–16 kW;按需租价挂牌约 $4.3–12.4/卡·时。</li>
+        <li><b>其余假设</b>(基建单价、托管费、电价、人员、维保比例、价格年降幅)是按行业量级给的起点,不是报价。做决策前请换成你拿到的真实数字。</li>
+        <li><b>口径</b>:稳态年 = 满负荷、首年价格;现金流按月计算,含爬坡、价格下行、贷款还本付息、亏损结转和期末残值。本页是测算工具,不构成投资建议。</li>
+      </ul>
+    </section>
+  </main>
+</div>
+<footer>模型价格快照日期 2026-10-06。</footer>
+<script>
+'use strict';
+/* ============================================================
+   AIDC 价值链财务模型 —— 计算内核(纯函数,无 DOM 依赖)
+   ============================================================ */
+const SEC_Y = 31536000, HRS_Y = 8760;
+
+/* ---------- 默认参数(全部以美元计) ---------- */
+const DEF = {
+  // 规模
+  servers: 128, gpuPerServer: 8, kwPerServer: 14.5, auxPct: 8, loadFactor: 80, pue: 1.25,
+  headroomPct: 10, extraMw: 0, extraOcc: 80,
+  // 投资范围
+  ownInfra: 1, ownCompute: 1, ownToken: 1, inferShare: 100,
+  // 周期(月)
+  tPre: 4, tDesign: 2, tBuild: 10, tFit: 2, tLead: 4, tCommission: 2, tRamp: 6, preHire: 3, opYears: 5,
+  // 基建造价($/kW IT)
+  cLand: 600, cShell: 2200, cElec: 4800, cCool: 2600, cFit: 900, cGrid: 700, cSoft: 8, cCont: 8,
+  nonItLife: 15, exitCap: 10,
+  // IT 设备
+  serverPrice: 480000, netPct: 14, storPct: 4, mgmtPct: 2, sparePct: 2, logiPct: 3,
+  depositPct: 30, itLife: 5, itResid: 10, fitoutPerKw: 800, tokenSetup: 0.6,
+  // 电力与运维
+  tariff: 0.11, coloRent: 250, nonItMaintPct: 2.5, facMisc: 60, insurPct: 0.35,
+  itMaintPct: 3, swPerGpu: 1000, bandwidth: 25,
+  // 人员(人数 / 年人力成本 千美元)
+  hcFac: 9, payFac: 60, hcSre: 6, paySre: 95, hcPlat: 3, payPlat: 120, hcSales: 3, paySales: 110,
+  hcInf: 8, payInf: 140, hcOps: 4, payOps: 80, gaPct: 2.5,
+  // 算力租赁
+  gpuPrice: 7.0, gpuUtil: 75, intDiscount: 15, rentSalesPct: 3, gpuDecay: 8,
+  // Token 业务
+  ioRatio: 8, cacheHit: 60, priceDisc: 20, derate: 40, tokUtil: 60, wIn: 0.25, streamSpeed: 50,
+  tokDecay: 15, thrGain: 10,
+  chApi: 60, chDirect: 25, chSub: 15, apiFee: 0, dirPrem: 15, dirSales: 8,
+  subFee: 20, subUse: 80, subCac: 12, gatewayPct: 2,
+  // 融资与税务
+  debtPct: 50, debtRate: 9, debtTenor: 4, taxRate: 17, wacc: 10,
+  // 显示
+  fxCNY: 7.1, fxSGD: 1.3
+};
+
+/* ---------- 模型目录:价格取自 OpenRouter(2026-10-06 抓取),吞吐取自 SemiAnalysis InferenceX ---------- */
+const MODELS_DEFAULT = [
+  { id: 'dsf', name: 'DeepSeek V4.1 Flash', slug: 'deepseek/deepseek-v4.1-flash',
+    arch: '552B 总参数,输入激活 8B、输出激活 16B', minGpu: 3,
+    pin: 0.30, pout: 1.20, pcache: 0.006,
+    range: '29 家供应商:输入 $0.07–0.45,输出 $0.18–2.40;DeepSeek 官方 $0.15 / $0.60(闲时)',
+    bench: 55000, measured: true,
+    benchNote: 'InferenceX 实测:B300 每卡 5.4 万–11 万 tok/s(AgentX 负载,2026-09)', share: 40 },
+  { id: 'dsp', name: 'DeepSeek V4 Pro 0813', slug: 'deepseek/deepseek-v4-pro-0813',
+    arch: '1.6T 总参数,激活 49B', minGpu: 8,
+    pin: 1.32, pout: 3.96, pcache: 0.044,
+    range: '20 家供应商:输入 $0.19–1.65,输出 $1.74–5.00;DeepSeek 官方 $0.66 / $1.98',
+    bench: 15000, measured: true,
+    benchNote: 'InferenceX 实测:B300 每卡 1.5 万(112 tok/s/用户)至 5.5 万(60 tok/s/用户),FP4,8K/1K,2026-10', share: 20 },
+  { id: 'glm', name: 'GLM 5.3', slug: 'z-ai/glm-5.3',
+    arch: 'Z.ai 旗舰推理模型(参数量未在 OpenRouter 披露)', minGpu: 4,
+    pin: 1.40, pout: 4.40, pcache: 0.26,
+    range: '32 家供应商:主流标价 $1.40 / $4.40;折扣后低至 $0.42 / $1.32',
+    bench: 3000, measured: true,
+    benchNote: 'InferenceX 实测 GLM-5/5.1:B300 每卡 2,988 tok/s(50 tok/s/用户,FP4,2026-05),此处作为 5.3 的近似', share: 25 },
+  { id: 'glf', name: 'GLM 5.3 Flash', slug: 'z-ai/glm-5.3-flash',
+    arch: '320B 总参数,激活 18B', minGpu: 2,
+    pin: 0.15, pout: 0.50, pcache: 0.03,
+    range: 'OpenRouter 标价 $0.15 / $0.50;批处理 $0.06 / $0.20',
+    bench: 20000, measured: false,
+    benchNote: '无公开 B300 实测。按激活参数量对比 DeepSeek V4.1 Flash 折半估算,请以自测替换', share: 15 },
+  { id: 'mif', name: 'MiMo-V2.6-Flash', slug: 'xiaomi/mimo-v2.6-flash',
+    arch: '309B 总参数,激活 15B', minGpu: 2,
+    pin: 0.14, pout: 0.28, pcache: 0.0028,
+    range: 'OpenRouter 标价 $0.14 / $0.28',
+    bench: 20000, measured: false,
+    benchNote: '无公开 B300 实测,估算值', share: 0 },
+  { id: 'hy4', name: 'Tencent Hy4 preview', slug: 'tencent/hy4-preview',
+    arch: '770B 总参数,激活 49B', minGpu: 4,
+    pin: 0.834, pout: 2.501, pcache: 0.042,
+    range: 'OpenRouter 标价 $0.834 / $2.501(分时段定价)',
+    bench: 5000, measured: false,
+    benchNote: '无公开 B300 实测,估算值', share: 0 }
+];
+
+const PERSONAS_DEFAULT = [
+  { name: '聊天助手用户', note: '每天约 20 轮对话', tpd: 60e3 },
+  { name: '办公 Copilot 席位', note: '文档、邮件、会议纪要', tpd: 400e3 },
+  { name: '编程 Agent 开发者', note: '重度使用,含大量缓存上下文', tpd: 15e6 },
+  { name: '7×24 企业 Agent', note: '客服、流程自动化机器人', tpd: 40e6 }
+];
+
+/* ---------- Morgan Stanley 基准(《AI Guidebook: Navigating the Age of Inference》,2026-09-07,$bn/GW,GB300) ---------- */
+const MS = {
+  capex: { it: 23, nonIt: 16, total: 39, itLife: 5, nonItLife: 15, chips: 410256 },
+  gens: [['Rubin Ultra', 50], ['Vera Rubin', 49], ['GB300', 39], ['GB200', 35], ['TPUv7', 27], ['Trainium3', 21]],
+  mix: [['服务器/机柜(不含 HBM、CPU)', 32], ['网络、光模块等', 13], ['Powered Shell 基建', 42], ['DRAM', 5], ['HBM', 5], ['CPU', 3]],
+  cases: [
+    { name: '算力租赁(IaaS)', rev: 22.9, opex: 7.6, ebit: 15.3, margin: 67, nopat: 12.1, roic: 31,
+      note: '$8.5/GPU·时 × 75% 利用率' },
+    { name: '自有算力卖 API', rev: 30.4, opex: 7.6, ebit: 22.7, margin: 75, nopat: 17.9, roic: 46,
+      note: '65% 算力做推理,2,750 tok/s/卡,$1.75/百万 token' },
+    { name: '租第三方算力卖 API', rev: 40.5, opex: 27.9, ebit: 12.6, margin: 31, nopat: 10.0, roic: null,
+      note: '按 $7.8/GPU·时 全年租用;NOPAT 利润率 25%' }
+  ]
+};
+
+const sum = (a, f) => a.reduce((s, x) => s + (f ? f(x) : x), 0);
+
+/* I/O 比例换算:基准吞吐按 8:1(InferenceX 8K 输入 / 1K 输出)标定,w = 一个输入 token 相对输出 token 的算力权重 */
+function ioConv(R, w) { return ((w * 8 + 1) / 9) * ((R + 1) / (w * R + 1)); }
+
+function irrMonthly(cfs) {
+  let pos = false, neg = false;
+  for (const c of cfs) { if (c > 0) pos = true; if (c < 0) neg = true; }
+  if (!pos || !neg) return null;
+  const npv = r => { let s = 0, d = 1; for (let i = 0; i < cfs.length; i++) { s += cfs[i] / d; d *= 1 + r; } return s; };
+  let lo = -0.5, hi = 1.0, flo = npv(lo), fhi = npv(hi);
+  if (flo * fhi > 0) return null;
+  for (let i = 0; i < 90; i++) {
+    const mid = (lo + hi) / 2, fm = npv(mid);
+    if (flo * fm <= 0) { hi = mid; fhi = fm; } else { lo = mid; flo = fm; }
+  }
+  return Math.pow(1 + (lo + hi) / 2, 12) - 1;
+}
+
+/* ============================================================
+   主计算
+   ============================================================ */
+function compute(p, models, personas) {
+  const pc = k => (p[k] || 0) / 100;
+  const cm = p._cm || 1, rm = p._rm || 1, tm = p._tm || 1, pm = p._pm || 1;
+  const tax = pc('taxRate');
+
+  /* ---- 规模 ---- */
+  const gpus = p.servers * p.gpuPerServer;
+  const itKw = p.servers * p.kwPerServer * (1 + pc('auxPct'));
+  const extKw = p.extraMw * 1000;
+  const dcKw = itKw * (1 + pc('headroomPct')) + extKw;
+  const facKw = dcKw * p.pue;
+  const ownFacKw = itKw * p.pue;                       // 自有服务器对应的市电容量
+  const racks = Math.ceil(p.servers / 4) + Math.ceil(p.servers / 32);
+
+  /* ---- 投资 ---- */
+  const infraItems = [
+    { k: 'land', label: '土地与场地', desc: '购地或长期租约首付、场平、围界', per: p.cLand },
+    { k: 'shell', label: '建筑与土建', desc: '机房楼、结构加固(液冷机柜承重)、装修', per: p.cShell },
+    { k: 'elec', label: '供配电系统', desc: '高低压柜、变压器、UPS、柴发、母线', per: p.cElec },
+    { k: 'cool', label: '制冷与液冷', desc: '冷源、冷却塔、CDU、二次侧管路、末端', per: p.cCool },
+    { k: 'fit', label: '机柜与弱电', desc: '机柜、综合布线、消防、安防、BMS/DCIM', per: p.cFit },
+    { k: 'grid', label: '电力接入', desc: '外线、变电站分摊、增容与并网费', per: p.cGrid }
+  ].map(x => Object.assign(x, { v: x.per * dcKw * cm }));
+  const hard = sum(infraItems, x => x.v);
+  const soft = hard * pc('cSoft'), cont = (hard + soft) * pc('cCont');
+  infraItems.push({ k: 'soft', label: '设计、监理、报批', desc: '设计费、监理费、环评能评、各类许可', v: soft });
+  infraItems.push({ k: 'cont', label: '不可预见费', desc: '材料涨价、工期延误、设计变更的预留', v: cont });
+  const infraCapex = hard + soft + cont;
+
+  const srv = p.servers * p.serverPrice * cm;
+  const itItems = [
+    { k: 'srv', label: 'GPU 服务器', desc: p.servers + ' 台 × 8 卡 HGX B300(含 CPU、内存、本地盘)', v: srv },
+    { k: 'net', label: '网络', desc: '计算网与存储网交换机、光模块、线缆', v: srv * pc('netPct') },
+    { k: 'stor', label: '存储', desc: '高性能并行存储、模型与日志存储', v: srv * pc('storPct') },
+    { k: 'mgmt', label: '管理与安全节点', desc: '管理、登录、CPU 节点,防火墙与堡垒机', v: srv * pc('mgmtPct') },
+    { k: 'spare', label: '备件', desc: '首批备件:GPU 板、电源、光模块', v: srv * pc('sparePct') },
+    { k: 'logi', label: '运输、关税、集成', desc: '物流保险、进口税费、上架与布线人工', v: srv * pc('logiPct') }
+  ];
+  const itCapexBase = sum(itItems, x => x.v);
+  const fitout = p.ownInfra ? 0 : itKw * p.fitoutPerKw * cm;
+  if (fitout) itItems.push({ k: 'fitout', label: '托管进场改造', desc: '租用机房时由租户承担的液冷末端、机柜与配电改造', v: fitout });
+  const itCapex = itCapexBase + fitout;
+  const tokCapex = p.tokenSetup * 1e6 * cm;
+
+  /* ---- 基建层(稳态年) ---- */
+  const rentOwn = itKw * p.coloRent * 12;
+  const rentExt = extKw * pc('extraOcc') * p.coloRent * 12;
+  const infraRev = rentOwn + rentExt;
+  const infraStaff = p.hcFac * p.payFac * 1e3;
+  const infra = {
+    key: 'infra', name: '基建层', sub: '机房与电力容量', owned: !!p.ownInfra, capex: infraCapex,
+    rev: [
+      { k: 'rentOwn', label: '托管费(本项目服务器)', v: rentOwn, transfer: 'compute' },
+      { k: 'rentExt', label: '托管费(外部租户)', v: rentExt }
+    ],
+    cost: [
+      { k: 'dep', label: '基建折旧', v: infraCapex / p.nonItLife, cat: 'depInfra' },
+      { k: 'maint', label: '设施维保', v: infraCapex * pc('nonItMaintPct'), cat: 'om' },
+      { k: 'staff', label: '设施运维人员', v: infraStaff, cat: 'staff' },
+      { k: 'misc', label: '水费、物业、杂费', v: dcKw * p.facMisc, cat: 'om' },
+      { k: 'ins', label: '财产保险', v: infraCapex * pc('insurPct'), cat: 'om' },
+      { k: 'ga', label: '管理费用', v: infraRev * pc('gaPct'), cat: 'ga' }
+    ]
+  };
+
+  /* ---- 算力层(稳态年) ---- */
+  const gInt = gpus * pc('inferShare'), gExt = gpus - gInt;
+  const pxInt = p.gpuPrice * (1 - pc('intDiscount'));
+  const revExt = gExt * HRS_Y * pc('gpuUtil') * p.gpuPrice;
+  const revInt = gInt * HRS_Y * pxInt;
+  const elecKwh = itKw * pc('loadFactor') * p.pue * HRS_Y;
+  const elec = elecKwh * p.tariff;
+  const compStaff = (p.hcSre * p.paySre + p.hcPlat * p.payPlat + p.hcSales * p.paySales) * 1e3;
+  const compute_ = {
+    key: 'compute', name: '算力层', sub: 'GPU 云与算力租赁', owned: !!p.ownCompute, capex: itCapex,
+    rev: [
+      { k: 'revExt', label: '对外算力租赁', v: revExt },
+      { k: 'revInt', label: '供给 Token 业务的算力', v: revInt, transfer: 'token' }
+    ],
+    cost: [
+      { k: 'dep', label: 'IT 设备折旧', v: itCapex / p.itLife, cat: 'depIt' },
+      { k: 'colo', label: '机柜托管费', v: rentOwn, cat: 'transfer', transfer: 'infra' },
+      { k: 'elec', label: '电费', v: elec, cat: 'power' },
+      { k: 'maint', label: '硬件维保与备件', v: itCapexBase * pc('itMaintPct'), cat: 'om' },
+      { k: 'sw', label: '集群软件授权', v: gpus * p.swPerGpu, cat: 'om' },
+      { k: 'bw', label: '带宽与专线', v: p.bandwidth * 12e3, cat: 'om' },
+      { k: 'staff', label: '运维、平台、销售人员', v: compStaff, cat: 'staff' },
+      { k: 'sales', label: '销售佣金', v: revExt * pc('rentSalesPct'), cat: 'channel' },
+      { k: 'ins', label: '财产保险', v: itCapexBase * pc('insurPct'), cat: 'om' },
+      { k: 'ga', label: '管理费用', v: (revExt + revInt) * pc('gaPct'), cat: 'ga' }
+    ]
+  };
+
+  /* ---- Token 层(稳态年) ---- */
+  const R = Math.max(0, p.ioRatio), conv = ioConv(R, p.wIn);
+  const shareSum = sum(models, m => Math.max(0, m.share || 0));
+  const disc = 1 - pc('priceDisc');
+  const mrows = models.map(m => {
+    const s = shareSum > 0 ? Math.max(0, m.share || 0) / shareSum : 0;
+    const T = m.bench * pc('derate') * conv * tm;                        // 生产环境每卡吞吐(输入+输出)
+    const effIn = m.pin * (1 - pc('cacheHit')) + m.pcache * pc('cacheHit');
+    const listBlend = (R * effIn + m.pout) / (R + 1);                    // 标价混合单价 $/M
+    const px = listBlend * disc * pm;                                    // 成交混合单价 $/M
+    const gpuHrValue = T * pc('tokUtil') * 3600 * px / 1e6;              // 每卡每小时产值
+    const tokYearFull = gInt * T * pc('tokUtil') * SEC_Y;
+    const g = gInt * s, tokYear = g * T * pc('tokUtil') * SEC_Y;
+    return { m, s, T, effIn, listBlend, px, gpuHrValue, tokYearFull, revFull: tokYearFull / 1e6 * px,
+      g, tokYear, rev: tokYear / 1e6 * px, outPerGpu: T / (R + 1), replicas: m.minGpu ? Math.floor(g / m.minGpu) : null };
+  });
+  const tokens = sum(mrows, r => r.tokYear);
+  const revApiEq = sum(mrows, r => r.rev);
+  const avgPx = tokens > 0 ? revApiEq / (tokens / 1e6) : 0;
+  const chSum = Math.max(0, p.chApi) + Math.max(0, p.chDirect) + Math.max(0, p.chSub);
+  const cA = chSum ? Math.max(0, p.chApi) / chSum : 0, cD = chSum ? Math.max(0, p.chDirect) / chSum : 0, cS = chSum ? Math.max(0, p.chSub) / chSum : 0;
+  const subPx = p.subUse > 0 ? p.subFee / p.subUse * pm : 0;             // 订阅折合 $/M
+  const revApi = revApiEq * cA, revDir = revApiEq * cD * (1 + pc('dirPrem')), revSub = tokens / 1e6 * cS * subPx;
+  const tokenRev = revApi + revDir + revSub;
+  const chanCost = revApi * pc('apiFee') + revDir * pc('dirSales') + revSub * pc('subCac');
+  const tokActive = gInt > 0 && shareSum > 0;
+  const tokStaff = tokActive ? (p.hcInf * p.payInf + p.hcOps * p.payOps) * 1e3 : 0;
+  const tokDepYears = Math.max(1, Math.min(3, p.opYears));
+  const tokCapexEff = tokActive ? tokCapex : 0;
+  const token = {
+    key: 'token', name: 'Token 层', sub: '模型推理服务(MaaS)', owned: !!p.ownToken, capex: tokCapexEff, active: tokActive,
+    rev: [
+      { k: 'api', label: '聚合平台 API', v: revApi },
+      { k: 'dir', label: '企业直销', v: revDir },
+      { k: 'sub', label: '订阅套餐', v: revSub }
+    ],
+    cost: [
+      { k: 'compute', label: '算力成本', v: revInt, cat: 'transfer', transfer: 'compute' },
+      { k: 'staff', label: '推理工程与运营人员', v: tokStaff, cat: 'staff' },
+      { k: 'chan', label: '渠道与获客', v: chanCost, cat: 'channel' },
+      { k: 'gw', label: '网关、支付、坏账', v: tokenRev * pc('gatewayPct'), cat: 'channel' },
+      { k: 'dep', label: '平台开办摊销', v: tokCapexEff / tokDepYears, cat: 'om' },
+      { k: 'ga', label: '管理费用', v: tokenRev * pc('gaPct'), cat: 'ga' }
+    ]
+  };
+
+  const layers = [infra, compute_, token];
+  layers.forEach(L => {
+    L.revTotal = sum(L.rev, x => x.v); L.costTotal = sum(L.cost, x => x.v);
+    L.ebit = L.revTotal - L.costTotal;
+    L.dep = sum(L.cost.filter(x => x.k === 'dep'), x => x.v);
+    L.ebitda = L.ebit + L.dep;
+    L.margin = L.revTotal > 0 ? L.ebit / L.revTotal : null;
+    L.roic = L.capex > 0 ? L.ebit * (1 - tax) / L.capex : null;
+  });
+
+  /* ---- 合并口径(只合并自营环节,抵消内部结算) ---- */
+  const ownedSet = { infra: !!p.ownInfra, compute: !!p.ownCompute, token: !!p.ownToken };
+  let extRev = 0, extCost = 0, capexOwned = 0, depOwned = 0;
+  const revLines = [], costLines = [];
+  layers.forEach(L => {
+    if (!L.owned) return;
+    capexOwned += L.capex; depOwned += L.dep;
+    L.rev.forEach(x => { if (!(x.transfer && ownedSet[x.transfer]) && x.v) { extRev += x.v; revLines.push({ layer: L, x }); } });
+    L.cost.forEach(x => { if (!(x.transfer && ownedSet[x.transfer]) && x.v) { extCost += x.v; costLines.push({ layer: L, x }); } });
+  });
+  const cons = { rev: extRev, cost: extCost, ebit: extRev - extCost, dep: depOwned, capex: capexOwned, revLines, costLines };
+  cons.ebitda = cons.ebit + cons.dep;
+  cons.margin = cons.rev > 0 ? cons.ebit / cons.rev : null;
+  cons.ebitdaMargin = cons.rev > 0 ? cons.ebitda / cons.rev : null;
+  cons.nopat = cons.ebit * (1 - tax);
+  cons.roic = cons.capex > 0 ? cons.nopat / cons.capex : null;
+
+  /* ---- 全链路(不论归属)终端收入去向 ---- */
+  const endRev = rentExt + revExt + tokenRev;
+  const dest = { power: 0, depIt: 0, depInfra: 0, staff: 0, om: 0, channel: 0, ga: 0 };
+  layers.forEach(L => L.cost.forEach(x => { if (x.cat !== 'transfer') dest[x.cat] += x.v; }));
+  const chainProfit = layers.map(L => ({ key: L.key, name: L.name, v: L.ebit }));
+
+  /* ---- 单位经济 ---- */
+  const hoursInstalled = gpus * HRS_Y;
+  const compCostPerHr = hoursInstalled > 0 ? compute_.costTotal / hoursInstalled : 0;
+  const compRevPerHr = hoursInstalled > 0 ? compute_.revTotal / hoursInstalled : 0;
+  const bePrice = compute_.revTotal > 0 ? p.gpuPrice * compute_.costTotal / compute_.revTotal : null;
+  const tokM = tokens / 1e6;
+  const costPerM_buy = tokM > 0 ? token.costTotal / tokM : null;                     // 外购算力口径
+  const infraShareOwn = infraRev > 0 ? rentOwn / infraRev : 0;
+  const fullCost = infra.costTotal * infraShareOwn * pc('inferShare')
+    + (compute_.costTotal - rentOwn) * pc('inferShare')
+    + (token.costTotal - revInt);
+  const costPerM_full = tokM > 0 ? fullCost / tokM : null;                           // 全栈自有口径
+  const revPerM = tokM > 0 ? tokenRev / tokM : null;
+  const tokGpuHr = gInt > 0 ? tokenRev / (gInt * HRS_Y) : 0;                         // Token 路径每卡时收入
+  const tokGpuHrNet = gInt > 0 ? (tokenRev - (token.costTotal - revInt)) / (gInt * HRS_Y) : 0;
+  const rentGpuHr = p.gpuPrice * pc('gpuUtil') * (1 - pc('rentSalesPct'));           // 租赁路径每卡时收入
+  const streams = sum(mrows, r => r.g * r.outPerGpu) / Math.max(1, p.streamSpeed);
+  const tokDay = tokens / 365;
+  const users = (personas || []).map(u => ({ u, n: u.tpd > 0 ? tokDay / u.tpd : 0 }));
+  const subscribers = p.subUse > 0 ? tokens * cS / (p.subUse * 1e6 * 12) : 0;
+  const channels = [
+    { k: 'api', name: '聚合平台 API', share: cA, px: avgPx, rev: revApi, cost: revApi * pc('apiFee') },
+    { k: 'dir', name: '企业直销', share: cD, px: avgPx * (1 + pc('dirPrem')), rev: revDir, cost: revDir * pc('dirSales') },
+    { k: 'sub', name: '订阅套餐', share: cS, px: subPx, rev: revSub, cost: revSub * pc('subCac') }
+  ];
+
+  const S = { gpus, itKw, extKw, dcKw, facKw, ownFacKw, racks, infraItems, itItems, infraCapex, itCapex, itCapexBase, fitout, tokCapex: tokCapexEff, tokActive,
+    rentOwn, rentExt, infraRev, revExt, revInt, elec, elecKwh, pxInt, gInt, gExt, tokenRev, chanCost, tokens, tokDay, avgPx, mrows, conv,
+    layers, infra, compute: compute_, token, cons, endRev, dest, chainProfit,
+    unit: { compCostPerHr, compRevPerHr, bePrice, costPerM_buy, costPerM_full, revPerM, tokGpuHr, tokGpuHrNet, rentGpuHr, streams },
+    users, subscribers, channels, infraStaff, compStaff, tokStaff, tokDepYears };
+
+  S.proj = project(p, S, rm);
+  return S;
+}
+
+/* ============================================================
+   月度现金流(建设期 + 运营期)
+   ============================================================ */
+function project(p, S, rm) {
+  const pc = k => (p[k] || 0) / 100;
+  const oI = !!p.ownInfra, oC = !!p.ownCompute, oT = !!p.ownToken;
+  const tax = pc('taxRate');
+  let pre = 0, design = 0, build = 0;
+  if (oI) { pre = p.tPre; design = p.tDesign; build = p.tBuild; }
+  else if (oC) { pre = p.tPre; build = p.tFit; }
+  const tReady = pre + design + build;
+  let order = null, deliver = tReady;
+  if (oC) { order = Math.max(0, tReady - p.tLead); deliver = order + p.tLead; }
+  const tInstall = Math.max(tReady, deliver);
+  const comm = (oI || oC || oT) ? p.tCommission : 0;
+  const goLive = tInstall + comm;
+  const opM = Math.max(1, Math.round(p.opYears * 12));
+  const N = goLive + opM;
+  const z = () => new Array(N).fill(0);
+  const capex = z(), capInfra = z(), capIt = z(), capTok = z();
+  const spread = (arr, amt, from, to) => {
+    from = Math.max(0, Math.min(N - 1, Math.round(from))); to = Math.max(0, Math.min(N, Math.round(to)));
+    if (to <= from) { arr[from] += amt; return; }
+    for (let m = from; m < to; m++) arr[m] += amt / (to - from);
+  };
+  if (oI) {
+    S.infraItems.forEach(x => {
+      if (x.k === 'land') spread(capInfra, x.v, 0, 0);
+      else if (x.k === 'soft') spread(capInfra, x.v, 0, pre + design);
+      else spread(capInfra, x.v, pre + design, tReady);
+    });
+  }
+  if (oC) {
+    const base = S.itCapexBase;
+    if (order === deliver) capIt[Math.min(N - 1, order)] += base;
+    else { capIt[order] += base * pc('depositPct'); capIt[Math.min(N - 1, deliver)] += base * (1 - pc('depositPct')); }
+    if (S.fitout) spread(capIt, S.fitout, pre, tReady);
+  }
+  if (oT) spread(capTok, S.tokCapex, tInstall, tInstall);
+  for (let m = 0; m < N; m++) capex[m] = capInfra[m] + capIt[m] + capTok[m];
+
+  const g = k => S.infra.cost.find(x => x.k === k).v, c = k => S.compute.cost.find(x => x.k === k).v;
+  const ga = pc('gaPct');
+  const chanRate = S.tokenRev > 0 ? (S.chanCost / S.tokenRev) + pc('gatewayPct') : pc('gatewayPct');
+  const infraDepM = S.infraCapex / p.nonItLife / 12, itDepM = S.itCapex / p.itLife / 12, tokDepM = S.tokCapex / S.tokDepYears / 12;
+  const rev = z(), opex = z(), dep = z(), interest = z(), taxU = z(), taxL = z(), fcfU = z(), fcfE = z(), draw = z(), princ = z();
+  let accInfraDep = 0, accItDep = 0, lossU = 0, lossL = 0, bal = 0, balAtLive = 0;
+  const tenorM = Math.max(1, Math.round(p.debtTenor * 12)), rMo = pc('debtRate') / 12;
+
+  for (let m = 0; m < N; m++) {
+    const k = m - goLive, live = k >= 0, y = live ? Math.floor(k / 12) : 0;
+    const ramp = live ? (p.tRamp > 0 ? Math.min(1, (k + 1) / p.tRamp) : 1) : 0;
+    const gf = Math.pow(1 - pc('gpuDecay'), y), tf = Math.pow((1 - pc('tokDecay')) * (1 + pc('thrGain')), y);
+    const staffOn = m >= goLive - p.preHire;
+    let r = 0, o = 0, d = 0;
+    if (oI) {
+      const rOwn = m >= tInstall ? S.rentOwn / 12 : 0;
+      const rExt = live ? S.rentExt / 12 * ramp * rm : 0;
+      r += (oC ? 0 : rOwn * rm) + rExt;
+      if (m >= tReady) { o += (g('maint') + g('misc') + g('ins')) / 12; if (accInfraDep < S.infraCapex) { d += infraDepM; accInfraDep += infraDepM; } }
+      if (staffOn) o += S.infraStaff / 12;
+      o += (rOwn + rExt) * ga;
+    }
+    if (oC) {
+      const rE = live ? S.revExt / 12 * ramp * gf * rm : 0;
+      const rI = live ? S.revInt / 12 * gf * (oT ? 1 : ramp * rm) : 0;
+      r += rE + (oT ? 0 : rI);
+      if (m >= tInstall && !oI) o += S.rentOwn / 12;
+      if (live) {
+        o += c('elec') / 12 * (0.4 + 0.6 * ramp) + (c('maint') + c('sw') + c('bw') + c('ins')) / 12;
+        o += rE * pc('rentSalesPct') + (rE + rI) * ga;
+        if (accItDep < S.itCapex) { d += itDepM; accItDep += itDepM; }
+      }
+      if (staffOn) o += S.compStaff / 12;
+    }
+    if (oT) {
+      const rT = live ? S.tokenRev / 12 * ramp * tf * rm : 0;
+      r += rT;
+      if (live) {
+        if (!oC) o += S.revInt / 12 * gf * ramp;
+        o += rT * (chanRate + ga);
+        if (k < S.tokDepYears * 12) d += tokDepM;
+      }
+      if (staffOn) o += S.tokStaff / 12;
+    }
+    rev[m] = r; opex[m] = o; dep[m] = d;
+    const ebitda = r - o, ebit = ebitda - d;
+    // 无杠杆税
+    if (ebit < 0) { lossU += -ebit; taxU[m] = 0; } else { const u = Math.min(lossU, ebit); lossU -= u; taxU[m] = (ebit - u) * tax; }
+    // 债务
+    draw[m] = capex[m] * pc('debtPct'); bal += draw[m];
+    interest[m] = bal * rMo;
+    if (m === goLive) balAtLive = bal;
+    if (live && k < tenorM) { princ[m] = Math.min(bal, balAtLive / tenorM); bal -= princ[m]; }
+    const pbt = ebit - interest[m];
+    if (pbt < 0) { lossL += -pbt; taxL[m] = 0; } else { const u = Math.min(lossL, pbt); lossL -= u; taxL[m] = (pbt - u) * tax; }
+    fcfU[m] = ebitda - taxU[m] - capex[m];
+    fcfE[m] = ebitda - interest[m] - taxL[m] - capex[m] + draw[m] - princ[m];
+  }
+  // 期末残值
+  const tvInfra = oI && p.exitCap > 0 ? Math.max(0, S.infra.ebitda) / pc('exitCap') : 0;
+  const tvIt = oC ? S.itCapexBase * pc('itResid') : 0;
+  const nbv = (oI ? Math.max(0, S.infraCapex - accInfraDep) : 0) + (oC ? Math.max(0, S.itCapex - accItDep) : 0);
+  const tvTax = Math.max(0, tvInfra + tvIt - nbv) * tax;
+  const tv = tvInfra + tvIt - tvTax;
+  fcfU[N - 1] += tv; fcfE[N - 1] += tv - bal; const finalDebt = bal; princ[N - 1] += bal; bal = 0;
+
+  // 汇总到年度
+  const periods = [];
+  const mk = (label, a, b, isBuild) => {
+    const P = { label, isBuild, months: b - a, rev: 0, opex: 0, dep: 0, interest: 0, tax: 0, capex: 0, fcfU: 0, fcfE: 0, tv: 0 };
+    for (let m = a; m < b; m++) { P.rev += rev[m]; P.opex += opex[m]; P.dep += dep[m]; P.interest += interest[m]; P.tax += taxL[m]; P.capex += capex[m]; P.fcfU += fcfU[m]; P.fcfE += fcfE[m]; }
+    P.ebitda = P.rev - P.opex; P.ebit = P.ebitda - P.dep; P.net = P.ebit - P.interest - P.tax;
+    return P;
+  };
+  if (goLive > 0) periods.push(mk('建设期', 0, goLive, true));
+  const nY = Math.ceil(opM / 12);
+  for (let y = 0; y < nY; y++) periods.push(mk('第 ' + (y + 1) + ' 年', goLive + y * 12, Math.min(N, goLive + (y + 1) * 12), false));
+  periods[periods.length - 1].tv = tv;
+  let cum = 0; periods.forEach(P => { cum += P.fcfU; P.cumU = cum; });
+
+  // 回本
+  let cumU = 0, minCum = 0, payback = null;
+  for (let m = 0; m < N; m++) { cumU += fcfU[m]; if (cumU < minCum) minCum = cumU; if (payback === null && m >= goLive && cumU >= 0) payback = m - goLive + 1; }
+  let cumE = 0, minE = 0; for (let m = 0; m < N; m++) { cumE += fcfE[m]; if (cumE < minE) minE = cumE; }
+  const totCapex = sum(capex);
+  const wm = Math.pow(1 + pc('wacc'), 1 / 12) - 1;
+  let npv = 0; for (let m = 0; m < N; m++) npv += fcfU[m] / Math.pow(1 + wm, m);
+  const eqIn = -sum(fcfE.filter(x => x < 0)), eqOut = sum(fcfE.filter(x => x > 0));
+
+  const phases = [];
+  if (oI) {
+    phases.push({ k: 'pre', name: '选址、尽调、报批', a: 0, b: pre, note: '锁定土地与电力指标,完成能评、环评、规划许可。电力批复通常是整条时间线上最长的等待。' });
+    phases.push({ k: 'design', name: '设计与招标', a: pre, b: pre + design, note: '确定单机柜功率、液冷方案、冗余等级,完成施工图与总包、机电招标。' });
+    phases.push({ k: 'build', name: '土建与机电安装', a: pre + design, b: tReady, note: '机房楼、变配电、柴发、冷源、液冷管路施工,末期做带载测试。' });
+  } else if (oC) {
+    phases.push({ k: 'pre', name: '选址与签约', a: 0, b: pre, note: '比选托管机房:可用电力、液冷能力、单价、网络出口与合同年限。' });
+    phases.push({ k: 'build', name: '进场改造', a: pre, b: tReady, note: '租户侧液冷末端、机柜、配电与网络布线改造。' });
+  }
+  if (oC) phases.push({ k: 'lead', name: '服务器采购与交付', a: order, b: deliver, note: '下单付定金,交付时付尾款。交期受 GPU 配额、出口许可与物流影响。' });
+  if (comm > 0) phases.push({ k: 'comm', name: oC ? '上架、联调、压测' : '平台搭建与接入', a: tInstall, b: goLive, note: oC ? '上架布线、网络与存储联调、烧机测试、调度平台部署。' : '部署推理服务、接入聚合平台、计费与监控上线。' });
+  phases.push({ k: 'ramp', name: '客户爬坡', a: goLive, b: Math.min(N, goLive + p.tRamp), note: '销售与负载逐步达到稳态。爬坡期固定成本照付,是现金流最紧的阶段。' });
+  phases.push({ k: 'op', name: '运营期', a: goLive, b: N, note: '按设备寿命测算;期末计入基建残值与 GPU 残值。' });
+
+  return { N, goLive, tReady, tInstall, order, deliver, opM, capex, capInfra, capIt, capTok, rev, opex, dep, fcfU, fcfE, interest,
+    periods, phases, irrU: irrMonthly(fcfU), irrE: p.debtPct > 0 ? irrMonthly(fcfE) : irrMonthly(fcfU), npv, payback, peakFunding: -minCum, peakEquity: -minE,
+    totCapex, tv, tvInfra, tvIt, eqIn, eqOut, moic: eqIn > 0 ? eqOut / eqIn : null, debtTotal: sum(draw), finalDebt };
+}
+
+if (typeof module !== 'undefined' && module.exports) module.exports = { DEF, MODELS_DEFAULT, PERSONAS_DEFAULT, MS, compute, ioConv, irrMonthly };
+
+</script>
+<script>
+'use strict';
+/* ============================================================
+   界面层
+   ============================================================ */
+const LS_KEY = 'aidc-value-chain-v1';
+const clone = o => JSON.parse(JSON.stringify(o));
+const state = { p: clone(DEF), models: clone(MODELS_DEFAULT), personas: clone(PERSONAS_DEFAULT), cur: 'USD' };
+try {
+  const raw = localStorage.getItem(LS_KEY);
+  if (raw) {
+    const s = JSON.parse(raw);
+    if (s && s.p) Object.keys(DEF).forEach(k => { if (typeof s.p[k] === 'number' && isFinite(s.p[k])) state.p[k] = s.p[k]; });
+    if (s && Array.isArray(s.models)) s.models.forEach(m => { const t = state.models.find(x => x.id === m.id); if (t) ['pin', 'pout', 'pcache', 'bench', 'share'].forEach(f => { if (typeof m[f] === 'number' && isFinite(m[f])) t[f] = m[f]; }); });
+    if (s && Array.isArray(s.personas)) s.personas.forEach((u, i) => { if (state.personas[i] && typeof u.tpd === 'number' && isFinite(u.tpd)) state.personas[i].tpd = u.tpd; });
+    if (s && s.cur) state.cur = s.cur;
+  }
+} catch (e) { /* 存储不可用时使用默认值 */ }
+function save() { try { localStorage.setItem(LS_KEY, JSON.stringify({ p: state.p, models: state.models.map(m => ({ id: m.id, pin: m.pin, pout: m.pout, pcache: m.pcache, bench: m.bench, share: m.share })), personas: state.personas.map(u => ({ tpd: u.tpd })), cur: state.cur })); } catch (e) { /* ignore */ } }
+
+/* ---------- 格式化 ---------- */
+const CUR = { USD: { sym: '$', fx: () => 1 }, CNY: { sym: '¥', fx: () => state.p.fxCNY }, SGD: { sym: 'S$', fx: () => state.p.fxSGD } };
+const nf = (x, d) => x.toLocaleString('en-US', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 });
+function M(v) {
+  if (v == null || !isFinite(v)) return '—';
+  const c = CUR[state.cur]; let x = v * c.fx(); const neg = x < -0.5; x = Math.abs(x);
+  let s;
+  if (x >= 1e8) s = nf(x / 1e8, x >= 1e10 ? 0 : 2) + ' 亿';
+  else if (x >= 1e4) s = nf(x / 1e4, x >= 1e6 ? 0 : 1) + ' 万';
+  else s = nf(x, 0);
+  return (neg ? '−' : '') + c.sym + s;
+}
+function U(v, d) { if (v == null || !isFinite(v)) return '—'; const c = CUR[state.cur]; const x = v * c.fx(); return (x < 0 ? '−' : '') + c.sym + nf(Math.abs(x), d == null ? 2 : d); }
+function P(v, d) { if (v == null || !isFinite(v)) return '—'; return (v < 0 ? '−' : '') + nf(Math.abs(v) * 100, d == null ? 1 : d) + '%'; }
+function CN(n) {
+  if (n == null || !isFinite(n)) return '—';
+  if (n >= 1e12) return nf(n / 1e12, n >= 1e13 ? 1 : 2) + ' 万亿';
+  if (n >= 1e8) return nf(n / 1e8, n >= 1e10 ? 0 : 1) + ' 亿';
+  if (n >= 1e4) return nf(n / 1e4, n >= 1e6 ? 0 : 1) + ' 万';
+  return nf(n, 0);
+}
+const sgn = v => v == null ? '' : (v >= 0 ? 'pos' : 'neg');
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* ---------- 输入项定义 ---------- */
+const GROUPS = [
+  { id: 'scale', title: '规模与机房', open: true, fields: [
+    { id: 'servers', label: '服务器数量', unit: '台', step: 1, slider: [16, 1024, 16] },
+    { id: 'gpuPerServer', label: '每台 GPU 数', unit: '卡', step: 1 },
+    { id: 'kwPerServer', label: '单台满载功耗', unit: 'kW', step: 0.1, hint: '8 卡 HGX B300 整机约 12–16 kW,DGX B300 参考值 14.5 kW' },
+    { id: 'auxPct', label: '网络、存储附加功耗', unit: '%' },
+    { id: 'loadFactor', label: '平均负载率', unit: '%', hint: '全年平均实际功耗 ÷ 满载功耗,决定电费' },
+    { id: 'pue', label: 'PUE', unit: '', step: 0.01 },
+    { id: 'headroomPct', label: '机房容量冗余', unit: '%' },
+    { id: 'extraMw', label: '额外对外出租容量', unit: 'MW', step: 0.5, hint: '机房建得比自用更大时,多出的 IT 容量租给外部租户' },
+    { id: 'extraOcc', label: '外租容量上架率', unit: '%' }
+  ] },
+  { id: 'scope', title: '投资范围', open: true, fields: [
+    { type: 'chk', id: 'ownInfra', label: '自建机房(基建层)' },
+    { type: 'chk', id: 'ownCompute', label: '自购服务器(算力层)' },
+    { type: 'chk', id: 'ownToken', label: '自营推理服务(Token 层)' },
+    { id: 'inferShare', label: '用于跑模型卖 Token 的算力', unit: '%', slider: [0, 100, 5], hint: '其余 GPU 按小时对外出租' }
+  ] },
+  { id: 'time', title: '建设与运营周期', fields: [
+    { id: 'tPre', label: '选址、尽调、报批', unit: '月', step: 1 },
+    { id: 'tDesign', label: '设计与招标', unit: '月', step: 1 },
+    { id: 'tBuild', label: '土建与机电安装', unit: '月', step: 1 },
+    { id: 'tFit', label: '托管机房进场改造', unit: '月', step: 1, hint: '只在不自建机房时生效' },
+    { id: 'tLead', label: '服务器交期', unit: '月', step: 1, hint: '下单到到货;模型按机房就绪时点倒排下单' },
+    { id: 'tCommission', label: '上架、联调、压测', unit: '月', step: 1 },
+    { id: 'tRamp', label: '客户爬坡期', unit: '月', step: 1 },
+    { id: 'preHire', label: '投产前提前招聘', unit: '月', step: 1 },
+    { id: 'opYears', label: '运营测算期', unit: '年', step: 1, slider: [3, 10, 1] }
+  ] },
+  { id: 'infra', title: '基建造价', fields: [
+    { type: 'sub', text: '以下单价按每 kW IT 容量计' },
+    { id: 'cLand', label: '土地与场地', unit: '$/kW', step: 50 },
+    { id: 'cShell', label: '建筑与土建', unit: '$/kW', step: 50 },
+    { id: 'cElec', label: '供配电系统', unit: '$/kW', step: 50 },
+    { id: 'cCool', label: '制冷与液冷', unit: '$/kW', step: 50 },
+    { id: 'cFit', label: '机柜与弱电', unit: '$/kW', step: 50 },
+    { id: 'cGrid', label: '电力接入', unit: '$/kW', step: 50 },
+    { id: 'cSoft', label: '设计、监理、报批', unit: '%' },
+    { id: 'cCont', label: '不可预见费', unit: '%' },
+    { id: 'nonItLife', label: '基建折旧年限', unit: '年', step: 1 },
+    { id: 'exitCap', label: '期末退出资本化率', unit: '%', step: 0.5, hint: '期末机房估值 = 基建层 EBITDA ÷ 该比率。数值越高越保守' }
+  ] },
+  { id: 'it', title: 'IT 设备', fields: [
+    { id: 'serverPrice', label: '服务器单价', unit: '$', step: 5000, slider: [380000, 800000, 10000], hint: '8 卡 HGX B300 公开报价约 $43–65 万,个别渠道到 $79.5 万' },
+    { id: 'netPct', label: '网络', unit: '% 服务器' },
+    { id: 'storPct', label: '存储', unit: '% 服务器' },
+    { id: 'mgmtPct', label: '管理与安全节点', unit: '% 服务器' },
+    { id: 'sparePct', label: '备件', unit: '% 服务器' },
+    { id: 'logiPct', label: '运输、关税、集成', unit: '% 服务器' },
+    { id: 'depositPct', label: '下单定金比例', unit: '%' },
+    { id: 'itLife', label: 'IT 折旧年限', unit: '年', step: 1 },
+    { id: 'itResid', label: '期末 GPU 残值', unit: '% 原值' },
+    { id: 'fitoutPerKw', label: '托管进场改造费', unit: '$/kW', step: 50, hint: '只在不自建机房时生效' },
+    { id: 'tokenSetup', label: 'Token 平台开办投入', unit: '百万$', step: 0.1 }
+  ] },
+  { id: 'opex', title: '电力与运维', fields: [
+    { type: 'region' },
+    { id: 'tariff', label: '电价', unit: '$/kWh', step: 0.005, slider: [0.03, 0.25, 0.005] },
+    { id: 'coloRent', label: '机柜托管单价', unit: '$/kW·月', step: 5, slider: [100, 450, 5], hint: '不含电费。既是基建层的收入,也是算力层的成本' },
+    { id: 'nonItMaintPct', label: '设施维保', unit: '%基建/年', step: 0.1 },
+    { id: 'facMisc', label: '水费、物业、杂费', unit: '$/kW·年', step: 5 },
+    { id: 'insurPct', label: '财产保险', unit: '%资产/年', step: 0.05 },
+    { id: 'itMaintPct', label: '硬件维保与备件', unit: '%IT/年', step: 0.5 },
+    { id: 'swPerGpu', label: '集群软件授权', unit: '$/卡·年', step: 100 },
+    { id: 'bandwidth', label: '带宽与专线', unit: '千$/月', step: 1 }
+  ] },
+  { id: 'staff', title: '人员配备', fields: [
+    { type: 'sub', text: '人数 × 年人力成本(千美元,含社保福利)' },
+    { type: 'pair', label: '设施运维(含三班值守)', a: 'hcFac', b: 'payFac' },
+    { type: 'pair', label: '系统、网络、存储运维', a: 'hcSre', b: 'paySre' },
+    { type: 'pair', label: '调度平台开发', a: 'hcPlat', b: 'payPlat' },
+    { type: 'pair', label: '算力销售与客户成功', a: 'hcSales', b: 'paySales' },
+    { type: 'pair', label: '推理优化与平台研发', a: 'hcInf', b: 'payInf' },
+    { type: 'pair', label: '运营、客服、开发者关系', a: 'hcOps', b: 'payOps' },
+    { id: 'gaPct', label: '管理费用(财务、法务、行政)', unit: '%收入', step: 0.5 }
+  ] },
+  { id: 'rent', title: '算力租赁定价', fields: [
+    { id: 'gpuPrice', label: 'B300 市场租价', unit: '$/卡·时', step: 0.1, slider: [3, 14, 0.1], hint: '公开挂牌约 $4.3–12.4;Morgan Stanley 对 GB300 取 $7–10' },
+    { id: 'gpuUtil', label: '对外出租利用率', unit: '%', slider: [30, 100, 1] },
+    { id: 'intDiscount', label: '长约 / 内部结算折扣', unit: '%', hint: 'Token 业务按「市场价 × (1 − 折扣)」全年照付不议' },
+    { id: 'rentSalesPct', label: '销售佣金', unit: '%收入', step: 0.5 },
+    { id: 'gpuDecay', label: '租价年降幅', unit: '%/年' }
+  ] },
+  { id: 'tok', title: 'Token 业务', fields: [
+    { id: 'derate', label: '生产折减系数', unit: '%', slider: [10, 100, 5], hint: '线上实际吞吐 ÷ 基准测试吞吐。长上下文、调度余量、冷启动都会吃掉基准值' },
+    { id: 'tokUtil', label: '推理负载率', unit: '%', slider: [10, 100, 5], hint: '全年平均负载 ÷ 峰值容量。有没有足够的需求把机器喂满' },
+    { id: 'priceDisc', label: '成交价相对标价折扣', unit: '%', slider: [0, 80, 5], hint: '聚合平台按价格与速度路由,新供应商通常要让价' },
+    { id: 'ioRatio', label: '输入 : 输出 token 比', unit: ': 1', step: 1, hint: '基准测试为 8 : 1。Agent 类负载更高' },
+    { id: 'cacheHit', label: '输入缓存命中率', unit: '%', hint: '命中部分按缓存读取价计费' },
+    { id: 'streamSpeed', label: '单用户流式速度', unit: 'tok/s', step: 5 },
+    { id: 'tokDecay', label: 'Token 价格年降幅', unit: '%/年' },
+    { id: 'thrGain', label: '吞吐年提升(软件优化)', unit: '%/年' },
+    { id: 'wIn', label: '输入 token 算力权重', unit: '', step: 0.05, hint: '改变输入输出比时用于换算吞吐:1 个输入 token 相当于多少个输出 token 的算力' },
+    { type: 'sub', text: '销售方式(三项占比自动归一)' },
+    { id: 'chApi', label: '聚合平台 API 占比', unit: '%' },
+    { id: 'chDirect', label: '企业直销占比', unit: '%' },
+    { id: 'chSub', label: '订阅套餐占比', unit: '%' },
+    { id: 'apiFee', label: '平台抽成', unit: '%收入', step: 0.5, hint: 'OpenRouter 向买家收充值手续费,不从供应商报价里扣,默认 0' },
+    { id: 'dirPrem', label: '直销相对平台价溢价', unit: '%' },
+    { id: 'dirSales', label: '直销销售费用', unit: '%收入' },
+    { id: 'subFee', label: '订阅月费', unit: '$/席·月', step: 1 },
+    { id: 'subUse', label: '每席月均用量', unit: '百万tok', step: 5 },
+    { id: 'subCac', label: '订阅获客与支付费用', unit: '%收入' },
+    { id: 'gatewayPct', label: '网关、支付、坏账', unit: '%收入', step: 0.5 }
+  ] },
+  { id: 'fin', title: '融资、税务与币种', fields: [
+    { id: 'debtPct', label: '贷款占总投资', unit: '%', slider: [0, 80, 5] },
+    { id: 'debtRate', label: '贷款利率', unit: '%', step: 0.25 },
+    { id: 'debtTenor', label: '还款年限(投产后等额本金)', unit: '年', step: 1 },
+    { id: 'taxRate', label: '所得税率', unit: '%', step: 0.5 },
+    { id: 'wacc', label: '折现率', unit: '%', step: 0.5 },
+    { id: 'fxCNY', label: '美元兑人民币', unit: '', step: 0.01 },
+    { id: 'fxSGD', label: '美元兑新元', unit: '', step: 0.01 }
+  ] }
+];
+const REGIONS = [['', '选择地区套用参考电价'], ['0.19', '新加坡 约 $0.19'], ['0.11', '马来西亚柔佛 约 $0.11'], ['0.055', '中国西部 约 $0.055'], ['0.06', '中东 约 $0.06'], ['0.075', '美国 约 $0.075']];
+const SCOPES = [
+  { k: 'full', name: '全栈自营', set: { ownInfra: 1, ownCompute: 1, ownToken: 1, inferShare: 100 } },
+  { k: 'rent', name: '自建机房做算力租赁', set: { ownInfra: 1, ownCompute: 1, ownToken: 0, inferShare: 0 } },
+  { k: 'shell', name: '只做机房', set: { ownInfra: 1, ownCompute: 0, ownToken: 0 } },
+  { k: 'colo', name: '租机柜做算力租赁', set: { ownInfra: 0, ownCompute: 1, ownToken: 0, inferShare: 0 } },
+  { k: 'coloTok', name: '租机柜、买服务器卖 Token', set: { ownInfra: 0, ownCompute: 1, ownToken: 1, inferShare: 100 } },
+  { k: 'maas', name: '租算力卖 Token', set: { ownInfra: 0, ownCompute: 0, ownToken: 1, inferShare: 100 } }
+];
+
+function buildInputs() {
+  let h = '<div class="hd">所有输入以美元计。改动即时生效,并保存在本浏览器。</div>';
+  GROUPS.forEach(g => {
+    h += '<details class="g"' + (g.open ? ' open' : '') + '><summary>' + g.title + '</summary><div class="gb">';
+    g.fields.forEach(f => {
+      if (f.type === 'sub') { h += '<div class="sub">' + f.text + '</div>'; return; }
+      if (f.type === 'chk') { h += '<div class="f chk"><input type="checkbox" id="i_' + f.id + '" data-chk="' + f.id + '"><label for="i_' + f.id + '">' + f.label + '</label></div>'; return; }
+      if (f.type === 'region') { h += '<div class="f sel"><label for="i_region">参考电价</label><select id="i_region">' + REGIONS.map(r => '<option value="' + r[0] + '">' + r[1] + '</option>').join('') + '</select></div>'; return; }
+      if (f.type === 'pair') {
+        h += '<div class="f pair"><label for="i_' + f.a + '">' + f.label + '</label>'
+          + '<div class="fi"><input type="number" id="i_' + f.a + '" data-k="' + f.a + '" step="1" min="0" aria-label="' + f.label + '人数"><span class="u">人</span></div>'
+          + '<div class="fi"><input type="number" id="i_' + f.b + '" data-k="' + f.b + '" step="5" min="0" aria-label="' + f.label + '年人力成本"><span class="u">千$</span></div></div>';
+        return;
+      }
+      h += '<div class="f"><label for="i_' + f.id + '">' + f.label + '</label><div class="fi"><input type="number" id="i_' + f.id + '" data-k="' + f.id + '" step="' + (f.step || 1) + '" min="0"><span class="u">' + (f.unit || '') + '</span></div>';
+      if (f.slider) h += '<input type="range" data-r="' + f.id + '" min="' + f.slider[0] + '" max="' + f.slider[1] + '" step="' + f.slider[2] + '" aria-label="' + f.label + '">';
+      if (f.hint) h += '<div class="hint">' + f.hint + '</div>';
+      h += '</div>';
+    });
+    h += '</div></details>';
+  });
+  $('inputs').innerHTML = h;
+  $('scope').innerHTML = '<span>投资范围</span>' + SCOPES.map(s => '<button type="button" data-scope="' + s.k + '" aria-pressed="false">' + s.name + '</button>').join('');
+}
+function syncInputs() {
+  document.querySelectorAll('[data-k]').forEach(el => { if (document.activeElement !== el) el.value = state.p[el.dataset.k]; });
+  document.querySelectorAll('[data-r]').forEach(el => { el.value = state.p[el.dataset.r]; });
+  document.querySelectorAll('[data-chk]').forEach(el => { el.checked = !!state.p[el.dataset.chk]; });
+  document.querySelectorAll('[data-scope]').forEach(b => {
+    const s = SCOPES.find(x => x.k === b.dataset.scope).set;
+    b.setAttribute('aria-pressed', Object.keys(s).every(k => Number(state.p[k]) === s[k]) ? 'true' : 'false');
+  });
+  $('cur').value = state.cur;
+}
+
+/* ---------- 模型表、画像表(输入只建一次) ---------- */
+function buildModelTable() {
+  let h = '<table><thead><tr><th style="min-width:210px">模型</th><th class="r">标价 $/百万 token<br>输入 / 输出 / 缓存读取</th><th class="r">基准吞吐<br>tok/s/卡</th><th class="r">算力占比<br>%</th><th class="r">线上吞吐<br>tok/s/卡</th><th class="r">成交均价<br>/百万</th><th class="r">每卡每小时产值</th><th class="r">全部算力跑它<br>日产 token、年收入</th></tr></thead><tbody>';
+  state.models.forEach((m, i) => {
+    const inp = (f, w) => '<input class="cell' + (w ? ' w' : '') + '" type="number" min="0" step="any" data-m="' + i + '" data-f="' + f + '" value="' + m[f] + '" aria-label="' + esc(m.name) + ' ' + f + '">';
+    h += '<tr><td><b>' + esc(m.name) + '</b> <span class="chip' + (m.measured ? ' ok' : '') + '">' + (m.measured ? '吞吐有实测' : '吞吐为估算') + '</span><span class="d">' + esc(m.arch) + (m.minGpu ? ';FP8 单副本至少 ' + m.minGpu + ' 卡' : '') + '</span>'
+      + '<details class="why"><summary>报价区间与吞吐依据</summary><span class="d">' + esc(m.range) + '</span><span class="d">' + esc(m.benchNote) + '</span></details></td>'
+      + '<td class="r">' + inp('pin') + ' ' + inp('pout') + ' ' + inp('pcache') + '</td>'
+      + '<td class="r">' + inp('bench', 1) + '</td><td class="r">' + inp('share') + '</td>'
+      + '<td class="r" id="m_T' + i + '"></td><td class="r" id="m_px' + i + '"></td><td class="r" id="m_v' + i + '"></td><td class="r" id="m_d' + i + '"></td></tr>';
+  });
+  h += '</tbody></table>';
+  $('modelTable').innerHTML = h;
+  let u = '<table><thead><tr><th>用户类型</th><th class="r">每人每天用量<br>万 token(输入+输出)</th><th class="r">当前产能可服务</th></tr></thead><tbody>';
+  state.personas.forEach((x, i) => {
+    u += '<tr><td><b>' + x.name + '</b><span class="d">' + x.note + '</span></td><td class="r"><input class="cell w" type="number" min="0" step="any" data-u="' + i + '" value="' + (x.tpd / 1e4) + '" aria-label="' + x.name + '每天 token"></td><td class="r" id="u_n' + i + '"></td></tr>';
+  });
+  $('userTable').innerHTML = u + '</tbody></table>';
+}
+
+/* ---------- 各区块渲染 ---------- */
+const CATCLS = { transfer: 's-xfer', depIt: 's-dep', depInfra: 's-dep', power: 's-power', staff: 's-staff', om: 's-other', channel: 's-other', ga: 's-other' };
+
+function renderKpis(S) {
+  const p = state.p, c = S.cons, pr = S.proj;
+  const k = [];
+  k.push(['总投资', M(c.capex), '基建 ' + M(p.ownInfra ? S.infraCapex : 0) + ',IT ' + M(p.ownCompute ? S.itCapex : 0)]);
+  k.push(['稳态年收入', M(c.rev), 'EBITDA 率 ' + P(c.ebitdaMargin, 0)]);
+  k.push(['稳态年营业利润', '<span class="' + sgn(c.ebit) + '">' + M(c.ebit) + '</span>', '利润率 ' + P(c.margin)]);
+  k.push(['项目 IRR', '<span class="' + sgn(pr.irrU) + '">' + P(pr.irrU) + '</span>', '净现值 ' + M(pr.npv) + '(折现率 ' + p.wacc + '%)']);
+  k.push(['股权 IRR', '<span class="' + sgn(pr.irrE) + '">' + P(pr.irrE) + '</span>', '贷款 ' + p.debtPct + '%,回报倍数 ' + (pr.moic ? pr.moic.toFixed(2) + '×' : '—')]);
+  k.push(['回本周期', pr.payback ? '投产后 ' + pr.payback + ' 个月' : '测算期内未回本', '建设期 ' + pr.goLive + ' 个月']);
+  if (S.tokActive) k.push(['每百万 token', U(S.unit.costPerM_full, 3) + ' / ' + U(S.unit.revPerM, 3), '全链成本 / 成交均价']);
+  else if (p.ownCompute || !p.ownInfra) k.push(['每卡每小时', U(S.unit.compCostPerHr) + ' / ' + U(S.unit.compRevPerHr), '算力层成本 / 收入(按装机时)']);
+  else { const kwm = (S.itKw + S.extKw * p.extraOcc / 100) * 12; k.push(['每 kW 每月', U(kwm > 0 ? S.infra.costTotal / kwm : null, 0) + ' / ' + U(p.coloRent, 0), '基建层成本 / 托管单价']); }
+  $('kpis').innerHTML = '<dl>' + k.map(x => '<div class="kpi"><dt>' + x[0] + '</dt><dd>' + x[1] + '</dd><small>' + x[2] + '</small></div>').join('') + '</dl>';
+}
+
+function layerBar(L, scale) {
+  let h = '<div class="cbar" role="img" aria-label="' + L.name + '成本构成">';
+  const agg = {};
+  L.cost.forEach(x => { const c = CATCLS[x.cat]; agg[c] = (agg[c] || 0) + x.v; });
+  ['s-xfer', 's-dep', 's-power', 's-staff', 's-other'].forEach(c => { if (agg[c] > 0) h += '<i class="' + c + '" style="width:' + (agg[c] / scale * 100).toFixed(2) + '%" title="' + M(agg[c]) + '"></i>'; });
+  if (L.ebit > 0) h += '<i class="s-profit" style="width:' + (L.ebit / scale * 100).toFixed(2) + '%" title="营业利润 ' + M(L.ebit) + '"></i>';
+  h += '<span class="mk" style="left:' + (L.revTotal / scale * 100).toFixed(2) + '%"></span></div>';
+  return h;
+}
+function renderChain(S) {
+  const p = state.p, L = S.layers, [infra, comp, tok] = L;
+  const scale = Math.max(1, ...L.map(x => Math.max(x.revTotal, x.costTotal)));
+  const node = (X) => {
+    const inactive = X.key === 'token' && !S.tokActive;
+    const verdict = inactive ? '<span class="chip">未启用</span>' : (X.margin == null ? '—' : (Math.abs(X.margin) < 0.03 ? '<span class="chip">盈亏平衡附近</span>' : (X.ebit > 0 ? '<span class="chip ok">赚钱</span>' : '<span class="chip bad">亏钱</span>')));
+    const light = X.capex < X.revTotal * 0.05;
+    return '<div class="cn ' + (X.owned ? 'owned' : '') + '"><div class="cn-in">'
+      + '<div><h3>' + X.name + '</h3><div class="who">' + X.sub + '</div><div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap"><span class="chip ' + (X.owned ? 'own' : '') + '">' + (X.owned ? '你的投资范围' : '由他人经营') + '</span>' + verdict + '</div></div>'
+      + '<div class="mid">' + (inactive ? '<div class="cbar-cap">没有算力分配给 Token 业务。把「用于跑模型卖 Token 的算力」调到 0 以上即可启用。</div>' : layerBar(X, scale)
+        + '<div class="cbar-cap">投入 ' + M(X.capex) + (light ? ',轻资产' : ',税后资本回报率 ' + P(X.roic)) + '</div>') + '</div>'
+      + '<div><div class="verdict ' + sgn(X.ebit) + '">' + (inactive ? '—' : P(X.margin)) + '<small>营业利润率</small></div>'
+      + '<div class="fig"><span>年收入</span><b>' + M(X.revTotal) + '</b><span>年成本</span><b>' + M(X.costTotal) + '</b><span>营业利润</span><b class="' + sgn(X.ebit) + '">' + M(X.ebit) + '</b></div></div>'
+      + '</div></div>';
+  };
+  const custParts = [];
+  if (S.tokenRev > 0) custParts.push('买 Token ' + M(S.tokenRev));
+  if (S.revExt > 0) custParts.push('租 GPU ' + M(S.revExt));
+  if (S.rentExt > 0) custParts.push('租机柜 ' + M(S.rentExt));
+  let h = '<div class="chain">';
+  h += '<div class="cn ext"><div class="cn-in"><div><h3>客户</h3><div class="who">开发者、企业、订阅用户</div></div><div>每年向这条链支付 <b class="n">' + M(S.endRev) + '</b>' + (custParts.length ? ':' + custParts.join(',') : '') + '</div></div></div>';
+  h += '<div class="lk"><span>↓ 买 Token</span><b>' + U(S.avgPx, 3) + ' / 百万</b><span>年销量 ' + CN(S.tokens) + ' token</span><span>年 ' + M(S.tokenRev) + '</span></div>';
+  h += node(tok);
+  h += '<div class="lk"><span>↓ 买 GPU·小时</span><b>' + U(S.pxInt) + '</b><span>' + nf(S.gInt, 0) + ' 卡全年照付</span><span>年 ' + M(S.revInt) + '</span>' + (S.gExt > 0 ? '<span class="side">另有 ' + nf(S.gExt, 0) + ' 卡直接对外出租:' + U(p.gpuPrice) + ' × ' + p.gpuUtil + '% 利用率</span>' : '') + '</div>';
+  h += node(comp);
+  h += '<div class="lk"><span>↓ 租机柜容量</span><b>' + U(p.coloRent, 0) + ' / kW·月</b><span>' + nf(S.itKw, 0) + ' kW</span><span>年 ' + M(S.rentOwn) + '</span><span class="side">一次性设备采购:付给 NVIDIA 与服务器厂商 ' + M(S.itCapex) + '</span></div>';
+  h += node(infra);
+  h += '<div class="lk"><span>↓ 买电</span><b>' + U(p.tariff, 3) + ' / kWh</b><span>年用电 ' + nf(S.elecKwh / 1e6, 1) + ' GWh(含 PUE),由算力层按表计承担</span><span>年 ' + M(S.elec) + '</span><span class="side">一次性建设:付给土建与机电承包商 ' + M(S.infraCapex) + '</span></div>';
+  h += '<div class="cn ext"><div class="cn-in"><div><h3>电网与发电</h3><div class="who">市电容量 ' + nf(S.facKw / 1000, 2) + ' MW</div></div><div>电费只占全链成本的一小部分,真正的瓶颈是拿到电力指标的时间。</div></div></div>';
+  h += '</div>';
+  h += '<div class="legend"><span><i class="s-xfer"></i>付给下一环节</span><span><i class="s-dep"></i>折旧(设备与基建)</span><span><i class="s-power"></i>电费</span><span><i class="s-staff"></i>人员</span><span><i class="s-other"></i>运维、渠道、管理</span><span><i class="s-profit"></i>营业利润</span><span>竖线为该环节收入;色条越过竖线即亏损</span></div>';
+  $('chainBody').innerHTML = h;
+
+  // 终端收入去向
+  const d = S.dest, items = [
+    ['电网与发电', d.power, 's-power'], ['设备商(IT 折旧)', d.depIt, 's-dep'], ['建设方(基建折旧)', d.depInfra, 's-dep'],
+    ['人员', d.staff, 's-staff'], ['运维、软件、保险', d.om, 's-other'], ['渠道与获客', d.channel, 's-other'], ['管理费用', d.ga, 's-other']
+  ];
+  const pcls = ['s-p1', 's-p2', 's-p3'];
+  S.chainProfit.forEach((x, i) => items.push([x.name + (x.v >= 0 ? '利润' : '亏损'), x.v, x.v >= 0 ? pcls[i] : 's-loss']));
+  const totalPos = items.reduce((s, x) => s + Math.max(0, x[1]), 0);
+  const sc = Math.max(S.endRev, totalPos, 1);
+  let b = '<div class="cbar" role="img" aria-label="终端收入去向">';
+  items.forEach(x => { if (x[1] > 0) b += '<i class="' + x[2] + '" style="width:' + (x[1] / sc * 100).toFixed(2) + '%" title="' + x[0] + ' ' + M(x[1]) + '"></i>'; });
+  b += '</div><div class="destlist">';
+  items.forEach(x => { if (Math.abs(x[1]) > 1) b += '<div><span><i class="' + x[2] + '"></i>' + x[0] + '</span><b class="n ' + (x[1] < 0 ? 'neg' : '') + '">' + (S.endRev > 0 ? (x[1] < 0 ? '−' : '') + nf(Math.abs(x[1]) / S.endRev * 100, 1) : '—') + ' 元</b></div>'; });
+  b += '</div>';
+  $('destBody').innerHTML = b;
+}
+
+function renderCapex(S) {
+  const p = state.p, pr = S.proj;
+  const tot = S.infraCapex + S.itCapex + S.tokCapex;
+  const mxItem = Math.max(1, ...S.infraItems.map(x => x.v), ...S.itItems.map(x => x.v));
+  const shr = v => '<td class="shr"><span class="bar" style="width:' + Math.max(1, v / mxItem * 110).toFixed(0) + 'px"></span><span class="n">' + P(v / tot) + '</span></td>';
+  const row = (x, unit, off) => '<tr class="' + (off ? 'off' : '') + '"><td>' + x.label + '<span class="d">' + x.desc + '</span></td><td class="r">' + M(x.v) + '</td>' + shr(x.v) + '<td class="r">' + unit + '</td></tr>';
+  let h = '<table><thead><tr><th>投资项</th><th class="r">金额</th><th>占全链投资</th><th class="r">单位造价</th></tr></thead><tbody>';
+  h += '<tr class="grp"><td colspan="4">基建(机房与电力)' + (p.ownInfra ? '' : ' — 不在你的投资范围,由机房方承担') + '</td></tr>';
+  S.infraItems.forEach(x => h += row(x, U(x.v / S.dcKw, 0) + ' /kW', !p.ownInfra));
+  h += '<tr class="tot' + (p.ownInfra ? '' : ' off') + '"><td>基建小计</td><td class="r">' + M(S.infraCapex) + '</td><td class="n">' + P(S.infraCapex / tot) + '</td><td class="r">' + U(S.infraCapex / S.dcKw, 0) + ' /kW</td></tr>';
+  h += '<tr class="grp"><td colspan="4">IT 设备' + (p.ownCompute ? '' : ' — 不在你的投资范围,由算力方承担') + '</td></tr>';
+  S.itItems.forEach(x => h += row(x, U(x.v / S.gpus, 0) + ' /卡', !p.ownCompute));
+  h += '<tr class="tot' + (p.ownCompute ? '' : ' off') + '"><td>IT 小计</td><td class="r">' + M(S.itCapex) + '</td><td class="n">' + P(S.itCapex / tot) + '</td><td class="r">' + U(S.itCapex / S.gpus, 0) + ' /卡</td></tr>';
+  if (S.tokCapex > 0) h += '<tr class="' + (p.ownToken ? '' : 'off') + '"><td>Token 平台开办<span class="d">推理网关、计费、监控、首批模型适配与压测</span></td><td class="r">' + M(S.tokCapex) + '</td>' + shr(S.tokCapex) + '<td class="r"></td></tr>';
+  h += '<tr class="tot"><td>你的投资范围合计</td><td class="r">' + M(S.cons.capex) + '</td><td class="n">' + P(S.cons.capex / tot) + '</td><td class="r"></td></tr></tbody></table>';
+  $('capexTable').innerHTML = h;
+
+  const mwFac = S.ownFacKw / 1000;
+  $('capexTiles').innerHTML = [
+    ['GPU 总数', nf(S.gpus, 0) + ' 卡', p.servers + ' 台,约 ' + S.racks + ' 个机柜'],
+    ['IT 负载', nf(S.itKw / 1000, 2) + ' MW', '市电容量 ' + nf(S.facKw / 1000, 2) + ' MW'],
+    ['基建造价', U(S.infraCapex / S.dcKw / 1000, 1) + ' 百万/MW', '按 IT 容量'],
+    ['每卡 IT 投资', U(S.itCapex / S.gpus, 0), 'MS 的 GB300 口径约 $56,000'],
+    ['每 MW 市电全链投资', U((S.infraCapex + S.itCapex) / (S.facKw / 1000) / 1e6, 1) + ' 百万', 'MS 的 GB300 口径为 $39 百万'],
+    ['峰值资金需求', M(pr.peakFunding), '其中股权 ' + M(pr.peakEquity)]
+  ].map(x => '<div class="tile"><dt>' + x[0] + '</dt><dd>' + x[1] + '</dd><small>' + x[2] + '</small></div>').join('');
+
+  // 甘特
+  const axisMax = Math.max(6, pr.goLive + Math.max(p.tRamp, 6) + 3);
+  const tick = axisMax > 30 ? 6 : 3;
+  const pos = m => (Math.min(axisMax, m) / axisMax * 100).toFixed(2) + '%';
+  let g = '<div class="gantt">';
+  pr.phases.forEach(ph => {
+    const cls = ph.k === 'ramp' ? 'ramp' : ph.k === 'op' ? 'op' : ph.k === 'lead' ? 'lead' : '';
+    const dur = ph.b - ph.a, w = (Math.min(axisMax, ph.b) - Math.min(axisMax, ph.a)) / axisMax * 100;
+    const lab = ph.k === 'op' ? '共 ' + dur + ' 个月' : dur + ' 个月';
+    const inside = Math.min(axisMax, ph.b) / axisMax > 0.86;
+    g += '<div class="gr"><div class="gl"><b>' + ph.name + '</b><span>第 ' + (ph.a + 1) + ' 月起</span></div><div class="gt" style="background-image:linear-gradient(90deg,var(--rule2) 1px,transparent 1px);background-size:' + (100 / axisMax * tick).toFixed(3) + '% 100%"><i class="' + cls + '" style="left:' + pos(ph.a) + ';width:' + Math.max(0.4, w).toFixed(2) + '%"></i><b style="left:' + (inside ? pos(ph.a) : pos(ph.b)) + (inside ? ';color:#fff' : '') + '">' + lab + '</b></div></div>';
+    g += '<p class="gnote">' + ph.note + '</p>';
+  });
+  g += '<div class="gr" style="border:0"><div class="gl"><b>资金支出节奏</b><span>每月资本开支</span></div><div class="spend">';
+  const mx = Math.max(1, ...pr.capex);
+  for (let m = 0; m < axisMax; m++) g += '<i style="height:' + ((pr.capex[m] || 0) / mx * 100).toFixed(1) + '%" title="第 ' + (m + 1) + ' 月 ' + M(pr.capex[m] || 0) + '"></i>';
+  g += '</div></div><div class="gr" style="border:0;padding:0"><div></div><div class="gax">';
+  for (let m = 0; m <= axisMax; m += tick) g += '<span style="left:' + pos(m) + '">' + m + '</span>';
+  g += '</div></div></div>';
+  $('ganttBody').innerHTML = g;
+  $('ganttLede').textContent = '从启动到投产 ' + pr.goLive + ' 个月,之后运营 ' + pr.opM + ' 个月。'
+    + (p.ownCompute ? '服务器在第 ' + (pr.order + 1) + ' 月下单、第 ' + pr.deliver + ' 月末到货。' : '')
+    + '单月最大支出 ' + M(mx) + '。';
+}
+
+function ledger(L, S) {
+  let h = '<table><thead><tr><th>' + L.name + ' <span class="chip ' + (L.owned ? 'own' : '') + '">' + (L.owned ? '自营' : '他人经营') + '</span></th><th class="r">稳态年</th><th class="r">占收入</th></tr></thead><tbody>';
+  h += '<tr class="grp"><td colspan="3">收入</td></tr>';
+  L.rev.forEach(x => { if (x.v) h += '<tr><td>' + x.label + (x.transfer ? ' <span class="chip">链内结算</span>' : '') + '</td><td class="r">' + M(x.v) + '</td><td class="r">' + P(x.v / L.revTotal, 0) + '</td></tr>'; });
+  h += '<tr class="tot"><td>收入合计</td><td class="r">' + M(L.revTotal) + '</td><td class="r"></td></tr>';
+  h += '<tr class="grp"><td colspan="3">成本</td></tr>';
+  L.cost.forEach(x => { if (x.v) h += '<tr><td>' + x.label + (x.transfer ? ' <span class="chip">链内结算</span>' : '') + '</td><td class="r">' + M(x.v) + '</td><td class="r">' + (L.revTotal > 0 ? P(x.v / L.revTotal, 0) : '—') + '</td></tr>'; });
+  h += '<tr class="tot"><td>成本合计</td><td class="r">' + M(L.costTotal) + '</td><td class="r">' + (L.revTotal > 0 ? P(L.costTotal / L.revTotal, 0) : '—') + '</td></tr>';
+  h += '<tr class="tot"><td>营业利润</td><td class="r ' + sgn(L.ebit) + '">' + M(L.ebit) + '</td><td class="r ' + sgn(L.ebit) + '">' + P(L.margin) + '</td></tr>';
+  h += '<tr><td>EBITDA(加回折旧)</td><td class="r">' + M(L.ebitda) + '</td><td class="r">' + (L.revTotal > 0 ? P(L.ebitda / L.revTotal, 0) : '—') + '</td></tr>';
+  return h + '</tbody></table>';
+}
+function renderOps(S) {
+  const p = state.p;
+  $('ledgers').innerHTML = S.layers.filter(L => !(L.key === 'token' && !S.tokActive)).map(L => '<div class="tw">' + ledger(L, S) + '</div>').join('');
+  // 单卡小时成本栈
+  const hrs = S.gpus * 8760, c = S.compute;
+  const parts = [['s-dep', 'IT 折旧', c.cost[0].v], ['s-xfer', '机柜托管', c.cost[1].v], ['s-power', '电费', c.cost[2].v], ['s-staff', '人员', c.cost[6].v], ['s-other', '维保、软件、带宽、保险、管理', c.cost[3].v + c.cost[4].v + c.cost[5].v + c.cost[7].v + c.cost[8].v + c.cost[9].v]];
+  const scale = Math.max(p.gpuPrice, S.unit.compCostPerHr, S.unit.tokGpuHr || 0) * 1.05;
+  let h = '<div class="hb"><span>成本(按装机小时)</span><div class="t">' + parts.map(x => '<i class="' + x[0] + '" style="width:' + (x[2] / hrs / scale * 100).toFixed(2) + '%" title="' + x[1] + ' ' + U(x[2] / hrs) + '"></i>').join('') + '</div><b>' + U(S.unit.compCostPerHr) + '</b></div>';
+  h += '<div class="hb"><span>裸租:挂牌价</span><div class="t"><i style="background:var(--rev);width:' + (p.gpuPrice / scale * 100).toFixed(2) + '%"></i></div><b>' + U(p.gpuPrice) + '</b></div>';
+  h += '<div class="hb"><span>裸租:计入利用率后</span><div class="t"><i style="background:var(--rev);opacity:.6;width:' + (S.unit.rentGpuHr / scale * 100).toFixed(2) + '%"></i></div><b>' + U(S.unit.rentGpuHr) + '</b></div>';
+  if (S.tokActive) {
+    h += '<div class="hb"><span>卖 Token:每卡时收入</span><div class="t"><i style="background:var(--profit);width:' + (S.unit.tokGpuHr / scale * 100).toFixed(2) + '%"></i></div><b>' + U(S.unit.tokGpuHr) + '</b></div>';
+    h += '<div class="hb"><span>卖 Token:扣除自身费用</span><div class="t"><i style="background:var(--profit);opacity:.6;width:' + (Math.max(0, S.unit.tokGpuHrNet) / scale * 100).toFixed(2) + '%"></i></div><b>' + U(S.unit.tokGpuHrNet) + '</b></div>';
+  }
+  h += '<div class="legend">' + parts.map(x => '<span><i class="' + x[0] + '"></i>' + x[1] + ' ' + U(x[2] / hrs) + '</span>').join('') + '</div>';
+  h += '<p class="note">算力层盈亏平衡租价约 ' + U(S.unit.bePrice) + ' /卡·时(当前利用率与结算结构下)。' + (S.tokActive ? '卖 Token 比裸租每卡时' + (S.unit.tokGpuHrNet >= S.unit.rentGpuHr ? '多赚 ' : '少赚 ') + U(Math.abs(S.unit.tokGpuHrNet - S.unit.rentGpuHr)) + ',但要自己承担需求波动。' : '') + '</p>';
+  $('unitBody').innerHTML = h;
+  const hc = [['基建层', p.hcFac, S.infraStaff], ['算力层', p.hcSre + p.hcPlat + p.hcSales, S.compStaff], ['Token 层', S.tokActive ? p.hcInf + p.hcOps : 0, S.tokStaff]];
+  $('staffBody').innerHTML = '<table><thead><tr><th>环节</th><th class="r">人数</th><th class="r">年人力成本</th><th class="r">人均</th></tr></thead><tbody>' + hc.map(x => '<tr><td>' + x[0] + '</td><td class="r">' + x[1] + '</td><td class="r">' + M(x[2]) + '</td><td class="r">' + (x[1] ? M(x[2] / x[1]) : '—') + '</td></tr>').join('') + '<tr class="tot"><td>合计</td><td class="r">' + hc.reduce((s, x) => s + x[1], 0) + '</td><td class="r">' + M(hc.reduce((s, x) => s + x[2], 0)) + '</td><td class="r"></td></tr></tbody></table>';
+}
+
+function renderToken(S) {
+  const p = state.p, u = S.unit;
+  S.mrows.forEach((r, i) => {
+    $('m_T' + i).textContent = nf(r.T, 0);
+    $('m_px' + i).textContent = U(r.px, 3);
+    const ok = r.gpuHrValue >= S.pxInt, okCost = r.gpuHrValue >= u.compCostPerHr;
+    $('m_v' + i).innerHTML = '<b style="font-size:15px">' + U(r.gpuHrValue) + '</b><br><span class="chip ' + (ok ? 'ok' : 'bad') + '">' + (ok ? '高于' : '低于') + '结算价 ' + U(S.pxInt) + '</span><br><span class="chip ' + (okCost ? 'ok' : 'bad') + '">' + (okCost ? '高于' : '低于') + '自有成本 ' + U(u.compCostPerHr) + '</span>';
+    $('m_d' + i).innerHTML = CN(r.tokYearFull / 365) + '<br>' + M(r.revFull);
+  });
+  S.users.forEach((x, i) => { $('u_n' + i).innerHTML = '<b>' + CN(x.n) + ' 人</b>'; });
+  $('tokTiles').innerHTML = (S.tokActive ? [
+    ['日产 token', CN(S.tokDay), '月 ' + CN(S.tokDay * 30) + ',年 ' + CN(S.tokens)],
+    ['成交均价', U(S.avgPx, 3) + ' /百万', '已含缓存命中与让价'],
+    ['每百万 token 成本', U(u.costPerM_full, 3), '全链自有口径;外购算力口径 ' + U(u.costPerM_buy, 3)],
+    ['峰值并发流', CN(u.streams), '按每用户 ' + p.streamSpeed + ' tok/s'],
+    ['输入输出换算系数', nf(S.conv, 2) + '×', '相对 8 : 1 基准'],
+    ['订阅席位', CN(S.subscribers), '折合 ' + U(p.subUse > 0 ? p.subFee / p.subUse : 0, 3) + ' /百万']
+  ] : [['Token 业务未启用', '—', '把「用于跑模型卖 Token 的算力」调到 0 以上']]).map(x => '<div class="tile"><dt>' + x[0] + '</dt><dd>' + x[1] + '</dd><small>' + x[2] + '</small></div>').join('');
+  const adv = { api: '上量最快,不用养销售。平台按价格与速度路由,新供应商基本只能靠让价拿流量。', dir: '可以卖出高于平台的单价:SLA、专属实例、数据合规、私有部署。销售周期长,要养销售和交付。', sub: '按月收费、现金流稳定。重度用户会把折合单价压得很低,关键是给每席设用量上限。' };
+  let h = '<table><thead><tr><th>销售方式</th><th class="r">产能占比</th><th class="r">折合单价 /百万</th><th class="r">年收入</th><th class="r">渠道费用</th><th class="r">扣渠道后</th></tr></thead><tbody>';
+  S.channels.forEach(c => { h += '<tr><td><b>' + c.name + '</b><span class="d">' + adv[c.k] + '</span></td><td class="r">' + P(c.share, 0) + '</td><td class="r">' + U(c.px, 3) + '</td><td class="r">' + M(c.rev) + '</td><td class="r">' + M(c.cost) + '</td><td class="r">' + M(c.rev - c.cost) + '</td></tr>'; });
+  h += '<tr><td><b>不卖 Token,直接出租 GPU</b><span class="d">长约照付不议,收入最确定,不承担需求波动;放弃吞吐优化带来的上行空间。</span></td><td class="r">' + P(1 - p.inferShare / 100, 0) + '</td><td class="r">' + U(p.gpuPrice) + ' /卡·时</td><td class="r">' + M(S.revExt) + '</td><td class="r">' + M(S.revExt * p.rentSalesPct / 100) + '</td><td class="r">' + M(S.revExt * (1 - p.rentSalesPct / 100)) + '</td></tr>';
+  $('chanTable').innerHTML = h + '</tbody></table>';
+  const be = (u.revPerM && u.costPerM_buy) ? u.costPerM_buy / u.revPerM : null;
+  const mon = S.tokDay * 30, ratio = mon / 18.9e12;
+  $('tokNote').innerHTML = S.tokActive ? ('按当前假设,集群每月产出约 <b class="n">' + CN(mon) + '</b> token。作为体量参照:OpenRouter 模型页显示,DeepSeek V4.1 Flash 头部 5 个应用合计调用约 18.9 万亿 token,GLM 5.3 约 4.3 万亿,DeepSeek V4 Pro 0813 约 1.1 万亿(统计窗口以 OpenRouter 页面为准)。你的月产能相当于第一个数字的 <b class="n">' + nf(ratio * 100, 0) + '%</b>。'
+    + (ratio >= 0.3 ? '产能本身不是瓶颈,能不能找到足够的需求把「推理负载率」撑起来才是。' : '')
+    + (be ? ' Token 层按外购算力口径的盈亏平衡点,约为当前成交均价的 ' + nf(be * 100, 0) + '%。' : '')) : '当前没有算力分配给 Token 业务。';
+}
+
+function renderReturns(S) {
+  const p = state.p, pr = S.proj, per = pr.periods;
+  $('retTiles').innerHTML = [
+    ['项目 IRR(无杠杆)', '<span class="' + sgn(pr.irrU) + '">' + P(pr.irrU) + '</span>', '全部自有资金口径'],
+    ['股权 IRR', '<span class="' + sgn(pr.irrE) + '">' + P(pr.irrE) + '</span>', '贷款 ' + M(pr.debtTotal) + ',利率 ' + p.debtRate + '%'],
+    ['净现值', '<span class="' + sgn(pr.npv) + '">' + M(pr.npv) + '</span>', '折现率 ' + p.wacc + '%'],
+    ['回本周期', pr.payback ? pr.payback + ' 个月' : '未回本', '自投产起,静态'],
+    ['股权回报倍数', pr.moic ? pr.moic.toFixed(2) + '×' : '—', '累计回收 ÷ 累计出资'],
+    ['期末残值', M(pr.tv), '机房 ' + M(pr.tvInfra) + ',GPU ' + M(pr.tvIt)],
+    ['稳态资本回报率', P(S.cons.roic), 'NOPAT ÷ 总投资,MS 口径']
+  ].map(x => '<div class="tile"><dt>' + x[0] + '</dt><dd>' + x[1] + '</dd><small>' + x[2] + '</small></div>').join('');
+
+  // 图
+  const W = 760, H = 300, pl = 56, prr = 12, pt = 14, pb = 34, n = per.length;
+  const vals = [];
+  per.forEach(x => { vals.push(-x.capex, x.fcfU + x.capex, x.cumU, x.fcfU); });
+  let vmax = Math.max(1, ...vals), vmin = Math.min(0, ...vals);
+  const span = (vmax - vmin) * 1.08; vmax += span * 0.04; vmin -= span * 0.04;
+  const y = v => pt + (vmax - v) / (vmax - vmin) * (H - pt - pb), bw = (W - pl - prr) / n;
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="年度现金流" style="width:100%;height:auto;max-width:860px">';
+  const c = CUR[state.cur], step = niceStep((vmax - vmin) * c.fx() / 5) / c.fx();
+  for (let v = Math.ceil(vmin / step) * step; v <= vmax; v += step) s += '<line x1="' + pl + '" x2="' + (W - prr) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="var(--rule2)"/><text x="' + (pl - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + M(v) + '</text>';
+  s += '<line x1="' + pl + '" x2="' + (W - prr) + '" y1="' + y(0) + '" y2="' + y(0) + '" stroke="var(--ink)"/>';
+  let path = '';
+  per.forEach((x, i) => {
+    const x0 = pl + i * bw, cw = Math.min(46, bw * 0.34), cx = x0 + bw / 2;
+    if (x.capex > 0) s += '<rect x="' + (cx - cw - 2) + '" y="' + y(0) + '" width="' + cw + '" height="' + (y(-x.capex) - y(0)) + '" fill="var(--cost)"><title>资本开支 ' + M(x.capex) + '</title></rect>';
+    const op = x.fcfU + x.capex - x.tv;
+    if (op >= 0) s += '<rect x="' + (cx + 2 - (x.capex > 0 ? 0 : cw / 2)) + '" y="' + y(op) + '" width="' + cw + '" height="' + (y(0) - y(op)) + '" fill="var(--profit)"><title>经营现金流 ' + M(op) + '</title></rect>';
+    else s += '<rect x="' + (cx + 2 - (x.capex > 0 ? 0 : cw / 2)) + '" y="' + y(0) + '" width="' + cw + '" height="' + (y(op) - y(0)) + '" fill="var(--loss)"><title>经营现金流 ' + M(op) + '</title></rect>';
+    if (x.tv > 0) s += '<rect x="' + (cx + 2 - cw / 2) + '" y="' + y(Math.max(0, op) + x.tv) + '" width="' + cw + '" height="' + (y(0) - y(x.tv)) + '" fill="var(--profit)" opacity=".45"><title>期末残值 ' + M(x.tv) + '</title></rect>';
+    path += (i ? 'L' : 'M') + cx + ' ' + y(x.cumU);
+    s += '<text x="' + cx + '" y="' + (H - 12) + '" text-anchor="middle">' + x.label + '</text>';
+  });
+  s += '<path d="' + path + '" fill="none" stroke="var(--ink)" stroke-width="2"/>';
+  per.forEach((x, i) => { s += '<circle cx="' + (pl + i * bw + bw / 2) + '" cy="' + y(x.cumU) + '" r="3.5" fill="var(--surface)" stroke="var(--ink)" stroke-width="2"><title>累计 ' + M(x.cumU) + '</title></circle>'; });
+  s += '</svg>';
+  $('cfChart').innerHTML = s + '<div class="legend"><span><i style="background:var(--cost)"></i>资本开支</span><span><i style="background:var(--profit)"></i>税后经营现金流</span><span><i style="background:var(--profit);opacity:.45"></i>期末残值</span><span><i style="background:var(--ink);height:2px;vertical-align:4px"></i>累计自由现金流</span></div>';
+
+  const rows = [['收入', 'rev'], ['现金运营成本', 'opex'], ['EBITDA', 'ebitda', 1], ['折旧摊销', 'dep'], ['营业利润', 'ebit', 1], ['利息', 'interest'], ['所得税', 'tax'], ['净利润', 'net', 1], ['资本开支', 'capex'], ['项目自由现金流', 'fcfU', 1], ['累计项目现金流', 'cumU'], ['股权现金流', 'fcfE']];
+  let h = '<table><thead><tr><th></th>' + per.map(x => '<th class="r">' + x.label + '</th>').join('') + '</tr></thead><tbody>';
+  rows.forEach(r => { h += '<tr class="' + (r[2] ? 'tot' : '') + '"><td>' + r[0] + '</td>' + per.map(x => '<td class="r ' + (x[r[1]] < -0.5 ? 'neg' : '') + '">' + M(x[r[1]]) + '</td>').join('') + '</tr>'; });
+  $('cfTable').innerHTML = h + '</tbody></table>';
+  $('retNote').textContent = (S.cons.capex < S.cons.rev * 0.05 && S.cons.rev > 0) ? '当前是轻资产模式,投入很小,IRR 的参考意义有限,请看利润率和绝对利润。' : '价格逐年下行(租价 −' + p.gpuDecay + '%、Token −' + p.tokDecay + '%)而吞吐逐年提升(+' + p.thrGain + '%),所以收入通常在第 2 年见顶。最后一年含期末残值。';
+}
+function niceStep(x) { const e = Math.pow(10, Math.floor(Math.log10(Math.max(x, 1e-9)))); const f = x / e; return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * e; }
+
+function heat(el, cap, rowLab, colLab, rows, cols, fn, fmt, curR, curC, capV) {
+  let h = '<table class="heat"><caption>' + cap + '</caption><thead><tr><th>' + rowLab + ' ＼ ' + colLab + '</th>' + cols.map(c => '<th>' + c.l + '</th>').join('') + '</tr></thead><tbody>';
+  rows.forEach((r, i) => {
+    h += '<tr><th>' + r.l + '</th>';
+    cols.forEach((c, j) => {
+      const v = fn(r.v, c.v);
+      const a = v == null ? 0 : Math.min(0.6, 0.08 + Math.abs(v) / capV * 0.52);
+      const bg = v == null ? 'transparent' : v >= 0 ? 'rgba(10,140,112,' + a.toFixed(2) + ')' : 'rgba(214,62,44,' + a.toFixed(2) + ')';
+      h += '<td class="' + (i === curR && j === curC ? 'cur' : '') + '" style="background:' + bg + '">' + fmt(v) + '</td>';
+    });
+    h += '</tr>';
+  });
+  $(el).innerHTML = h + '</tbody></table>';
+}
+function renderSens() {
+  const p = state.p, run = o => compute(Object.assign({}, p, o), state.models, state.personas);
+  const gp = [0.6, 0.8, 1, 1.2, 1.4].map(m => ({ v: +(p.gpuPrice * m).toFixed(2), l: U(p.gpuPrice * m) }));
+  const ut = [-30, -15, 0, 15].map(d => Math.max(10, Math.min(98, p.gpuUtil + d))).map(v => ({ v, l: v + '%' }));
+  heat('heat1', '算力层营业利润率(假设全部 GPU 对外出租)', '租价', '利用率', gp, ut, (a, b) => run({ gpuPrice: a, gpuUtil: b, inferShare: 0 }).compute.margin, v => P(v, 0), 2, 2, 0.6);
+  const pm = [0.5, 0.75, 1, 1.5, 2].map(v => ({ v, l: v + '×' })), tm = [0.5, 0.75, 1, 1.5, 2].map(v => ({ v, l: v + '×' }));
+  heat('heat2', 'Token 层营业利润率(假设全部 GPU 跑当前模型组合)', '成交价', '每卡吞吐', pm, tm, (a, b) => run({ _pm: a, _tm: b, inferShare: 100 }).token.margin, v => P(v, 0), 2, 2, 0.6);
+  const rmv = [0.7, 0.85, 1, 1.15, 1.3].map(v => ({ v, l: (v >= 1 ? '+' : '−') + Math.round(Math.abs(v - 1) * 100) + '%' })), cmv = [0.8, 0.9, 1, 1.1, 1.2].map(v => ({ v, l: (v >= 1 ? '+' : '−') + Math.round(Math.abs(v - 1) * 100) + '%' }));
+  heat('heat3', '项目 IRR(当前投资范围)', '收入', '总投资', rmv, cmv, (a, b) => run({ _rm: a, _cm: b }).proj.irrU, v => P(v, 0), 2, 2, 0.4);
+}
+
+function renderBench(S) {
+  const p = state.p, f = 1e6 / (S.itKw * p.pue) / 1e9, c = S.cons, tax = p.taxRate / 100;
+  const our = { rev: c.rev * f, opex: c.cost * f, ebit: c.ebit * f, margin: c.margin, nopat: c.nopat * f, capex: c.capex * f, roic: c.roic };
+  const b = v => v == null ? '—' : '$' + nf(v, 1) + 'bn';
+  let h = '<table><thead><tr><th>每 GW 市电容量</th>' + MS.cases.map(x => '<th class="r">MS:' + x.name + '</th>').join('') + '<th class="r">你的模型<br>(当前投资范围)</th></tr></thead><tbody>';
+  h += '<tr><td>年收入</td>' + MS.cases.map(x => '<td class="r">' + b(x.rev) + '</td>').join('') + '<td class="r">' + b(our.rev) + '</td></tr>';
+  h += '<tr><td>年运营成本(含折旧)</td>' + MS.cases.map(x => '<td class="r">' + b(x.opex) + '</td>').join('') + '<td class="r">' + b(our.opex) + '</td></tr>';
+  h += '<tr><td>营业利润</td>' + MS.cases.map(x => '<td class="r">' + b(x.ebit) + '</td>').join('') + '<td class="r">' + b(our.ebit) + '</td></tr>';
+  h += '<tr><td>营业利润率</td>' + MS.cases.map(x => '<td class="r">' + x.margin + '%</td>').join('') + '<td class="r">' + P(our.margin, 0) + '</td></tr>';
+  h += '<tr><td>税后营业利润(NOPAT)</td>' + MS.cases.map(x => '<td class="r">' + b(x.nopat) + '</td>').join('') + '<td class="r">' + b(our.nopat) + '</td></tr>';
+  h += '<tr><td>总投资</td><td class="r">$39.0bn</td><td class="r">$39.0bn</td><td class="r">不持有资产</td><td class="r">' + b(our.capex) + '</td></tr>';
+  h += '<tr class="tot"><td>资本回报率(NOPAT ÷ 总投资)</td>' + MS.cases.map(x => '<td class="r">' + (x.roic ? x.roic + '%' : '—') + '</td>').join('') + '<td class="r">' + P(our.roic, 0) + '</td></tr>';
+  h += '<tr><td>关键假设</td>' + MS.cases.map(x => '<td class="r" style="white-space:normal;max-width:15em">' + x.note + '</td>').join('') + '<td class="r" style="white-space:normal;max-width:15em">税率 ' + p.taxRate + '%;' + nf(S.gpus * f * 1e9 / 1e4, 1) + ' 万卡/GW(MS 为 41.0 万)</td></tr>';
+  $('benchTable').innerHTML = h + '</tbody></table>';
+  // 投资结构对比
+  const tot = S.infraCapex + S.itCapexBase;
+  const srv = S.itItems[0].v, oth = S.itCapexBase - srv;
+  const bar = (name, parts) => '<div class="hb two"><span>' + name + '</span><div class="t">' + parts.map(x => '<i class="' + x[0] + '" style="width:' + x[1].toFixed(1) + '%" title="' + x[2] + ' ' + x[1].toFixed(0) + '%"></i>').join('') + '</div></div>';
+  $('benchMix').innerHTML = bar('MS:GB300 每 GW', [['s-dep', 45, '服务器、内存、CPU'], ['s-staff', 13, '网络'], ['s-power', 42, '基建']])
+    + bar('你的模型', [['s-dep', srv / tot * 100, '服务器'], ['s-staff', oth / tot * 100, '网络、存储及其他 IT'], ['s-power', S.infraCapex / tot * 100, '基建']])
+    + '<div class="legend"><span><i class="s-dep"></i>服务器(含内存、CPU):MS 45%,你 ' + nf(srv / tot * 100, 0) + '%</span><span><i class="s-staff"></i>网络及其他 IT:MS 13%,你 ' + nf(oth / tot * 100, 0) + '%</span><span><i class="s-power"></i>基建(Powered Shell):MS 42%,你 ' + nf(S.infraCapex / tot * 100, 0) + '%</span></div>';
+  $('benchGens').innerHTML = MS.gens.map(g => '<div class="hb"><span>' + g[0] + '</span><div class="t"><i style="background:var(--c-dep);width:' + (g[1] / 50 * 100) + '%"></i></div><b>$' + g[1] + 'bn</b></div>').join('');
+}
+
+/* ---------- 主循环 ---------- */
+let timer = null;
+function render() {
+  const S = compute(state.p, state.models, state.personas);
+  renderKpis(S); renderChain(S); renderCapex(S); renderOps(S); renderToken(S); renderReturns(S); renderBench(S); renderSens();
+  save();
+}
+function schedule() { clearTimeout(timer); timer = setTimeout(render, 70); }
+
+function init() {
+  buildInputs(); buildModelTable(); syncInputs(); render();
+  $('inputs').addEventListener('input', e => {
+    const t = e.target;
+    if (t.dataset.k) { const v = parseFloat(t.value); if (isFinite(v) && v >= 0) { state.p[t.dataset.k] = v; const r = document.querySelector('[data-r="' + t.dataset.k + '"]'); if (r) r.value = v; } }
+    else if (t.dataset.r) { const v = parseFloat(t.value); state.p[t.dataset.r] = v; const n = $('i_' + t.dataset.r); if (n) n.value = v; }
+    else if (t.dataset.chk) { state.p[t.dataset.chk] = t.checked ? 1 : 0; }
+    else if (t.id === 'i_region' && t.value) { state.p.tariff = parseFloat(t.value); }
+    syncInputs(); schedule();
+  });
+  $('scope').addEventListener('click', e => {
+    const b = e.target.closest('[data-scope]'); if (!b) return;
+    Object.assign(state.p, SCOPES.find(x => x.k === b.dataset.scope).set); syncInputs(); render();
+  });
+  $('modelTable').addEventListener('input', e => { const t = e.target; if (t.dataset.m == null) return; const v = parseFloat(t.value); if (isFinite(v) && v >= 0) { state.models[+t.dataset.m][t.dataset.f] = v; schedule(); } });
+  $('userTable').addEventListener('input', e => { const t = e.target; if (t.dataset.u == null) return; const v = parseFloat(t.value); if (isFinite(v) && v >= 0) { state.personas[+t.dataset.u].tpd = v * 1e4; schedule(); } });
+  $('cur').addEventListener('change', e => { state.cur = e.target.value; render(); });
+  $('reset').addEventListener('click', () => { state.p = clone(DEF); state.models = clone(MODELS_DEFAULT); state.personas = clone(PERSONAS_DEFAULT); buildModelTable(); syncInputs(); render(); });
+  $('toggleInputs').addEventListener('click', () => { const a = $('inputs'); const open = a.classList.toggle('open'); $('toggleInputs').setAttribute('aria-expanded', open ? 'true' : 'false'); if (open) a.scrollIntoView({ block: 'start' }); });
+}
+if (typeof document !== 'undefined') { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init(); }
+
+</script>
+</body>
+</html>
