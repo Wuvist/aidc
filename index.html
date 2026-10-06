@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AIDC 财务与经济模型导航</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EEF1F4; --surface:#FFFFFF; --sunk:#F6F8FA; --ink:#111C26; --muted:#5B6875; --faint:#8793A0;
+  --rule:#CFD7DF; --rule2:#E4E9EE;
+  --rev:#1B62C4; --cost:#D9801A; --profit:#0A7862; --loss:#D23B2A;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC","Segoe UI",sans-serif;
+  --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  --num:"Barlow Semi Condensed","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0D1319; --surface:#151D26; --sunk:#111922; --ink:#E7EDF2; --muted:#9AA7B4; --faint:#6F7C89;
+    --rule:#2B3743; --rule2:#202A35;
+    --rev:#63A0F2; --cost:#F0A64A; --profit:#3FC4A6; --loss:#FF6F5B;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0D1319; --surface:#151D26; --sunk:#111922; --ink:#E7EDF2; --muted:#9AA7B4; --faint:#6F7C89;
+  --rule:#2B3743; --rule2:#202A35;
+  --rev:#63A0F2; --cost:#F0A64A; --profit:#3FC4A6; --loss:#FF6F5B;
+}
+*,*::before,*::after{box-sizing:inherit}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font:15px/1.6 var(--sans);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+.header{
+  padding:48px 24px 32px;
+  max-width:1040px;
+  margin:0 auto;
+  width:100%;
+}
+.header-badge{
+  display:inline-block;
+  font-family:var(--num);
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  padding:3px 10px;
+  border-radius:20px;
+  background:rgba(27,98,196,.12);
+  color:var(--rev);
+  margin-bottom:14px;
+}
+h1{
+  font-family:var(--serif);
+  font-size:clamp(26px,3.6vw,40px);
+  margin:0 0 10px;
+  font-weight:900;
+  line-height:1.2;
+}
+.header p{
+  margin:0;
+  color:var(--muted);
+  font-size:16px;
+  max-width:48em;
+}
+main{
+  max-width:1040px;
+  margin:0 auto;
+  padding:0 24px 60px;
+  width:100%;
+  flex:1;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
+  gap:24px;
+}
+.card{
+  background:var(--surface);
+  border:1px solid var(--rule);
+  border-radius:6px;
+  padding:24px;
+  display:flex;
+  flex-direction:column;
+  position:relative;
+  transition:border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+  text-decoration:none;
+  color:inherit;
+}
+.card:hover{
+  border-color:var(--rev);
+  box-shadow:0 8px 24px rgba(0,0,0,.06);
+  transform:translateY(-2px);
+}
+.card-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  margin-bottom:12px;
+}
+.card h2{
+  font-family:var(--serif);
+  font-size:20px;
+  margin:0;
+  font-weight:700;
+  line-height:1.3;
+  color:var(--ink);
+}
+.badge{
+  font-size:11.5px;
+  padding:2px 8px;
+  border-radius:3px;
+  font-weight:500;
+  white-space:nowrap;
+}
+.badge.active{
+  background:rgba(10,120,98,.12);
+  color:var(--profit);
+}
+.badge.pending{
+  background:var(--rule2);
+  color:var(--muted);
+}
+.card p{
+  color:var(--muted);
+  font-size:14px;
+  margin:0 0 18px;
+  line-height:1.55;
+  flex:1;
+}
+.features{
+  list-style:none;
+  padding:0;
+  margin:0 0 20px;
+  border-top:1px solid var(--rule2);
+  padding-top:14px;
+  font-size:13px;
+  color:var(--muted);
+}
+.features li{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:6px;
+}
+.features li:last-child{
+  margin-bottom:0;
+}
+.features li::before{
+  content:"•";
+  color:var(--rev);
+  font-size:16px;
+}
+.action{
+  font-size:13.5px;
+  font-weight:600;
+  color:var(--rev);
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-top:auto;
+}
+.card.disabled{
+  opacity:.65;
+  pointer-events:none;
+  background:var(--sunk);
+}
+footer{
+  border-top:1px solid var(--rule);
+  padding:24px;
+  text-align:center;
+  color:var(--faint);
+  font-size:13px;
+  background:var(--surface);
+}
+footer a{
+  color:var(--muted);
+  text-decoration:none;
+}
+footer a:hover{
+  text-decoration:underline;
+  color:var(--ink);
+}
+</style>
+</head>
+<body>
+<header class="header">
+  <span class="header-badge">AIDC Financial Hub</span>
+  <h1>AIDC 财务与经济模型导航</h1>
+  <p>AI 数据中心（AIDC）全产业链价值、投资成本、算力集群运营及 Token 经济模型测算工具集。</p>
+</header>
+
+<main>
+  <div class="grid">
+    <!-- 模型 1: 价值链财务模型 -->
+    <a href="calculator.html" class="card">
+      <div class="card-header">
+        <h2>AIDC 价值链财务模型</h2>
+        <span class="badge active">可用</span>
+      </div>
+      <p>以 128 台 8 卡 B300 服务器为基准，从电力、机房、算力一路算到 Token，看清每个环节收多少、花多少与盈利归属。</p>
+      <ul class="features">
+        <li>基础设施与机房 Capex / Opex 拆解</li>
+        <li>B300 集群算力服务器投资回报率</li>
+        <li>主流大模型 Token 产能与定价敏感性分析</li>
+        <li>支持多币种切换（USD / CNY / SGD）与参数全交互</li>
+      </ul>
+      <div class="action">进入测算模型 <span>→</span></div>
+    </a>
+
+    <!-- 预留未来扩展模型卡片 -->
+    <div class="card disabled">
+      <div class="card-header">
+        <h2>更多规格集群模型</h2>
+        <span class="badge pending">规划中</span>
+      </div>
+      <p>面向不同规模集群（如 GB200 NVL72、单机 8 卡小型集群）、区域电价阶梯套利与云算力租售比对模型。</p>
+      <ul class="features">
+        <li>GB200 机架级液冷能效与投资回报对比</li>
+        <li>跨区域（中/美/东南亚/中东）绿电与算力出海测算</li>
+        <li>云服务商算力转租 vs 自建 Capex 决策模型</li>
+      </ul>
+      <div class="action" style="color:var(--faint)">即将推出</div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div>AIDC Calculator · <a href="https://github.com/Wuvist/aidc_calculator" target="_blank" rel="noopener">GitHub 仓库</a></div>
+</footer>
+</body>
+</html>
